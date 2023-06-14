@@ -65,10 +65,12 @@ async def registration(message: types.Message):
 @dp.message_handler(commands=['start_game'])
 async def start_game(message: types.Message):
     if message.chat.type == 'group' or message.chat.type == 'supergroup':
-        if registrationPlayers.getNumberPlayers() < 4:
+        if registrationPlayers.getNumberPlayers() < 0:
             await message.answer("There are too few of you! Minimum number of players is 4.")
         else:
             await message.answer("Game is start!\nEveryone got their roles in the private messages.")
+            main_game = Game(registrationPlayers.players, bot)
+            await main_game.game()
     else:
         print(message.chat.type)
         await message.answer("This command only for groups")

@@ -1,35 +1,36 @@
-from aiogram import types, Bot
+from aiogram import Bot
 
 
 class Citizen:
-    def __init__(self, *players):
+    def __init__(self, players):
         self.players = players
 
-    def notifyCitizens(self, bot: Bot):
+    async def notifyCitizens(self, bot: Bot):
         for id in self.players:
-            bot.send_message(chat_id=id, text="You are citizen")
+            await bot.send_message(chat_id=id, text="You are citizen")
 
 
 class Mafia:
-    def __init__(self, *players):
+    def __init__(self, players):
         self.players = players
+        print(self.players)
 
-    def notifyMafias(self, bot: Bot):
+    async def notifyMafias(self, bot: Bot):
         for id in self.players:
-            bot.send_message(chat_id=id, text="You are mafia")
+            await bot.send_message(chat_id=id, text="You are mafia")
 
 
 class Detective:
     def __init__(self, player):
         self.player = player
 
-    def notifyDetective(self, bot: Bot):
-        bot.send_message(chat_id=self.player, text="You are detective")
+    async def notifyDetective(self, bot: Bot):
+        await bot.send_message(chat_id=self.player, text="You are detective")
 
 
 class Doctor:
     def __init__(self, player):
         self.player = player
 
-    def notifyDoctor(self, bot: Bot):
-        bot.send_message(chat_id=self.player, text="You are doctor")
+    async def notifyDoctor(self, bot: Bot):
+        await bot.send_message(chat_id=self.player, text="You are doctor")

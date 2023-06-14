@@ -1,4 +1,6 @@
+from aiogram import Bot
 import random
+import Roles
 
 
 class SignUpForTheGame:
@@ -22,17 +24,19 @@ class SignUpForTheGame:
 
 
 class Game:
-    def __init__(self, l: list):
+    def __init__(self, l: list, bot: Bot):
         self.list_players = l
         self.time_of_day = "night"
         self.status_game = True
+        self.bot = bot
 
-    def game(self):
-        while self.status_game:
-            if self.time_of_day == "night":
-                pass
-            else:
-                pass
+    async def game(self):
+        await self.defineRoles()
+        # while self.status_game:
+        #     if self.time_of_day == "night":
+        #         pass
+        #     else:
+        #         pass
 
     def setDay(self):
         self.status_game = "day"
@@ -43,7 +47,14 @@ class Game:
     def killPlayer(self, id):
         self.list_players.remove(id)
 
-    def defineRoles(self):
+    async def defineRoles(self):
         number_of_mafia = int(len(self.list_players) / 4)
-        indexes_mafia_players = random.sample(range(len(self.list_players)), k=number_of_mafia)
+        if number_of_mafia == 0:
+            number_of_mafia = 1
 
+        indexes_mafia_players = random.sample(range(len(self.list_players)), k=number_of_mafia)
+        print(indexes_mafia_players)
+        list_mafia_id = [self.list_players[i] for i in indexes_mafia_players]
+
+        mafia = Roles.Mafia(list_mafia_id)
+        await mafia.notifyMafias(self.bot)
