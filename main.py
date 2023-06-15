@@ -9,13 +9,16 @@ TOKEN = '5990396163:AAGOgKqVWSHStXo0CaD-kkD8lCxXdtCnmfY'
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
 
+# class from Game.py for registration
 registrationPlayers = SignUpForTheGame()
 
+# create inline keyboard for registration
 registrationKeyBoard = InlineKeyboardMarkup(row_width=1)
 registration = InlineKeyboardButton(text="Register", callback_data="register")
 registrationKeyBoard.add(registration)
 
 
+# process callback to registrate player
 @dp.callback_query_handler()
 async def register(callback: types.CallbackQuery):
     if callback.data == 'register':
@@ -26,16 +29,16 @@ async def register(callback: types.CallbackQuery):
             registrationPlayers.addPlayer(callback.from_user.id)
 
 
-# обработка команды /start
+# command start
 @dp.message_handler(commands=['start'])
 async def info_about_game(message: types.Message):  # message.answer = написать в чат
     await message.answer("Hello!\nI am a host bot that allows you to play Mafia online in Telegram. To do this, "
                          "you just need to add a bot to the group and follow the instructions.")
 
 
-# вывод правил игры
+# print rules of game
 @dp.message_handler(commands=['rules'])
-async def info_about_game(message: types.Message):  # печатую правила игры
+async def info_about_game(message: types.Message):
     await message.answer(
         '-- THE AIM OF THE GAME --\n\nThe aim of the game is different for the Mafia and Citizen players. '
         'Citizens will want to unmask the Mafia players. At the same time, the Mafia will want to '
@@ -52,6 +55,7 @@ async def info_about_game(message: types.Message):  # печатую прави�
         'Once a character is eliminated they show their card to the remaining players.')
 
 
+# create inline keyboard and announce about registration
 @dp.message_handler(commands=['registration'])
 async def registration(message: types.Message):
     registrationPlayers.clearListPlayers()
@@ -62,10 +66,11 @@ async def registration(message: types.Message):
         await message.answer("This command only for groups")
 
 
+# start game
 @dp.message_handler(commands=['start_game'])
 async def start_game(message: types.Message):
-    if message.chat.type == 'group' or message.chat.type == 'supergroup':
-        if registrationPlayers.getNumberPlayers() < 0:
+    if message.chat.type == 'group' or message.chat.type == 'supergroup':  # this command only for chats
+        if registrationPlayers.getNumberPlayers() < 0:  # check that players are enough for game
             await message.answer("There are too few of you! Minimum number of players is 4.")
         else:
             await message.answer("Game is start!\nEveryone got their roles in the private messages.")
@@ -76,6 +81,13 @@ async def start_game(message: types.Message):
         await message.answer("This command only for groups")
 
 
-# запуск бота
+@dp.message_handler(commands=['end_game'])
+async def end_game(message: types.Message):
+    # interrupt the game
+    # return game to its start state
+    pass
+
+
+# start bot
 if __name__ == '__main__':
     executor.start_polling(dp)
