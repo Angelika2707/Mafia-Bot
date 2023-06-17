@@ -2,6 +2,7 @@ from aiogram import Bot
 import random
 import Roles
 
+
 # Galia was here
 
 
@@ -26,27 +27,80 @@ class SignUpForTheGame:  # class implements registration of players
 
 
 class Game:
-    def __init__(self, l: list, bot: Bot):
+    def __init__(self, l: list, bot: Bot, chat_id):
         self.list_players = l  # ids of players
         self.time_of_day = "night"  # flag that defines day cycle
         self.status_game = True  # while status game == True - game run, endgame when status_game = False
         self.bot = bot  # bot from telegram
+        self.list_innocents = []
+        self.list_mafia = []
+        self.chat_id = chat_id
 
     async def game(self):
         await self.defineRoles()
 
-        while self.status_game:  # main part of game
+        while self.status_game:
             if self.time_of_day == "night":
-                # mafia chooses a victim
-                # doctor chooses player to save
-                # detective chooses player to check
-                pass
+                await self.nightCycle()
             else:
-                # citizens talks about who is mafia
-                # Vote
-                # one player leave the game
-                # if number of citizens equals num of mafia, status_game = False and game end
-                pass
+                await self.dayCycle()
+
+    # actions for night cycle
+    async def nightCycle(self):
+        await self.bot.send_message(chat_id=self.chat_id, text="The night is coming. "
+                                                               "The city falls asleep, the mafia wakes up.")
+        victim = await self.chooseVictim(list_mafia)
+        self.killPlayer(victim)
+        await self.bot.send_message(chat_id=victim, text="You were killed by the Mafia.")
+
+        self.setDay()
+
+    # actions for day cycle
+    async def dayCycle(self):
+        await self.bot.send_message(chat_id=self.chat_id, text="It's daytime. Discuss and vote for the Mafia.")
+        # we need to add voting
+        eliminated_player = random.choice(self.list_innocents)  # for debug
+        self.killPlayer(eliminated_player)
+        await self.bot.send_message(chat_id=eliminated_player, text="You have been eliminated from the game.")
+
+        # check conditions for ending a game
+        num_citizens = len(self.list_innocents)
+        num_mafia = len(self.list_mafia)
+        if num_citizens <= num_mafia:
+            self.status_game = False
+            await self.bot.send_message(chat_id=self.chat_id, text="The Mafia has won!")
+        elif num_mafia == 0:
+            self.status_game = False
+            await self.bot.send_message(chat_id=self.chat_id, text="Citizens have won!")
+        else:
+            self.setNight()
+
+    # for Mafia players to choose a victim
+    async def chooseVictim(self, mafia):
+        panel_markup = InlineKeyboardMarkup(row_width=1)
+        buttons = []
+
+        for player_id in self.list_innocents:       # add buttons with every innocent player name
+            player_name = await self.bot.get_chat_member(self.group_id, player_id)
+            button = InlineKeyboardButton(text=player_name.user.full_name, callback_data=str(player_id))
+            buttons.append(button)
+
+        panel_markup.add(*buttons)
+
+        for player in mafia:    # send message to Mafia players
+            await self.bot.send_message(chat_id=player, text="Choose a victim:", reply_markup=panel_markup)
+
+        # choose victim
+        victim = None
+        while victim is None:
+            try:
+                response = await self.bot.wait_for('callback_query', timeout=60) # 60 seconds for choosing
+                victim = response.data
+            except asyncio.TimeoutError:
+                for player in mafia:
+                    await self.bot.send_message(chat_id=player, text="Time is out. No victim chosen.")
+
+        return victim
 
     def setDay(self):
         self.status_game = "day"
@@ -71,12 +125,14 @@ class Game:
         indexes_mafia_players = random.sample(range(len(self.list_players)),
                                               k=number_of_mafia)  # choose random players to be mafia
         list_mafia_id = [self.list_players[i] for i in indexes_mafia_players]  # list of player's id to write them msgs
+        self.list_mafia = list_mafia_id # need to put list of mafia players from Mafia class, not from here (to solve)
 
         mafia = Roles.Mafia(list_mafia_id)  # Create class mafia and put ids mafia players
         await mafia.notifyMafias(self.bot)  # notify players
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-        civilians = list(set(self.list_players).difference(set(list_mafia_id)))    # list of players without mafia
+        civilians = list(set(self.list_players).difference(set(list_mafia_id)))     # list of players without mafia
+        self.list_innocents = civilians # take list of innocents
 
         doctor_id = random.choice(civilians)
         doctor = Roles.Doctor(doctor_id)        # Create doctor and notify player
