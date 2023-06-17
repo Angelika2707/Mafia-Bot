@@ -23,7 +23,7 @@ class Mafia:
 
 
 class Detective:
-    def __init__(self, player):
+    def __init__(self, player):     # player - id of the player
         self.player = player
 
     async def notifyDetective(self, bot: Bot):   # this method notify detective player in game

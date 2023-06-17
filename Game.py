@@ -2,6 +2,8 @@ from aiogram import Bot
 import random
 import Roles
 
+# Galia was here
+
 
 class SignUpForTheGame:  # class implements registration of players
     def __init__(self):
@@ -73,5 +75,21 @@ class Game:
         mafia = Roles.Mafia(list_mafia_id)  # Create class mafia and put ids mafia players
         await mafia.notifyMafias(self.bot)  # notify players
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        civilians = list(set(self.list_players).difference(set(list_mafia_id)))    # list of players without mafia
+
+        doctor_id = random.choice(civilians)
+        doctor = Roles.Doctor(doctor_id)        # Create doctor and notify player
+        await doctor.notifyDoctor(self.bot)
+
+        civilians.remove(doctor_id)   # list of players without mafia and doctor
+
+        detective_id = random.choice(civilians)
+        detective = Roles.Detective(detective_id)       # Create detective and notify player
+        await detective.notifyDetective(self.bot)
+
+        civilians.remove(detective_id)    # list of citizens
+        citizens = Roles.Citizen(civilians)       # Create citizens
+        await citizens.notifyCitizens(self.bot)     # Notify players
 
         # We have to complete defines roles

@@ -21,6 +21,7 @@ registrationKeyBoard.add(registration)
 # process callback to registrate player
 @dp.callback_query_handler()
 async def register(callback: types.CallbackQuery):
+    print(12)
     if callback.data == 'register':
         if registrationPlayers.checkPlayerInGame(callback.from_user.id):
             await bot.send_message(chat_id=callback.from_user.id, text="You are already in the game!")
@@ -70,7 +71,8 @@ async def registration(message: types.Message):
 @dp.message_handler(commands=['start_game'])
 async def start_game(message: types.Message):
     if message.chat.type == 'group' or message.chat.type == 'supergroup':  # this command only for chats
-        if registrationPlayers.getNumberPlayers() < 0:  # check that players are enough for game
+        print(registrationPlayers.getNumberPlayers())
+        if registrationPlayers.getNumberPlayers() <= 0:  # check that players are enough for game
             await message.answer("There are too few of you! Minimum number of players is 4.")
         else:
             await message.answer("Game is start!\nEveryone got their roles in the private messages.")
