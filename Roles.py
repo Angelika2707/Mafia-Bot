@@ -11,6 +11,9 @@ class Citizen:
         for id in self.players:
             await bot.send_message(chat_id=id, text="You are citizen")
 
+    def getCitizensList(self):
+        return self.players
+
 
 class Mafia:
     def __init__(self, players):
@@ -21,6 +24,9 @@ class Mafia:
         for id in self.players:
             await bot.send_message(chat_id=id, text="You are mafia")
 
+    def getMafiaList(self):
+        return self.players
+
 
 class Detective:
     def __init__(self, player):     # player - id of the player
@@ -29,6 +35,9 @@ class Detective:
     async def notifyDetective(self, bot: Bot):   # this method notify detective player in game
         await bot.send_message(chat_id=self.player, text="You are detective")
 
+    def getDetective(self):
+        return self.player
+
 
 class Doctor:
     def __init__(self, player):
@@ -36,3 +45,6 @@ class Doctor:
 
     async def notifyDoctor(self, bot: Bot):  # this method notify doctor player in game
         await bot.send_message(chat_id=self.player, text="You are doctor")
+
+    def getDoctor(self):
+        return self.player
