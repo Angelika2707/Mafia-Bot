@@ -76,7 +76,7 @@ async def start_game(message: types.Message):
             await message.answer("There are too few of you! Minimum number of players is 4.")
         else:
             await message.answer("Game is start!\nEveryone got their roles in the private messages.")
-            main_game = Game(registrationPlayers.players, bot)
+            main_game = Game(registrationPlayers.players, bot, message.chat.id)
             await main_game.game()
     else:
         print(message.chat.type)
@@ -85,9 +85,9 @@ async def start_game(message: types.Message):
 
 @dp.message_handler(commands=['end_game'])
 async def end_game(message: types.Message):
-    # interrupt the game
-    # return game to its start state
-    pass
+    registrationPlayers.clearListPlayers()  # Clear the list of players
+    await message.answer("The game has been ended. Thank you for playing!\n"
+                         "You can start a new game by using the /start_game command.")
 
 
 # start bot
