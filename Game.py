@@ -9,14 +9,17 @@ class SignUpForTheGame:  # class implements registration of players
     def __init__(self):
         self.players = list()
 
-    def addPlayer(self, id):
-        self.players.append(id)
+    def addPlayer(self, id, name):
+        player = Player(id, name)
+        self.players.append(player)
 
     def checkPlayerInGame(self, id):
-        if id not in self.players:
-            return False
-        else:
-            return True
+        flag = False
+        for player in self.players:
+            if player.get_id() == id:
+                flag = True
+        return flag
+
 
     def getNumberPlayers(self):
         return len(self.players)
@@ -75,8 +78,8 @@ class Game:
     async def chooseVictim(self):
         self.votes = {player: 0 for player in self.__list_innocents}
         choosePlayers = InlineKeyboardMarkup(row_width=len(self.__list_innocents))
-        for id in self.__list_innocents:
-            username = await self.bot.get_chat_member(chat_id=self.chat_id, user_id=id)
+        for player in self.__list_innocents:
+            username = await self.bot.get_chat_member(chat_id=self.chat_id, user_id=player.get_id())
             player = InlineKeyboardButton(text=username.user.username, callback_data="kill")
             choosePlayers.add(player)
 
@@ -111,7 +114,9 @@ class Game:
         self.status_game = "night"
 
     def killPlayer(self, id):  # method for kill citizen
-        self.list_players.remove(id)
+        for player in self.list_players:
+            if player.get_id() == id:
+                self.list_players.remove(player)
 
     async def defineRoles(self):
         # DEFINE MAFIAS PLAYERS
@@ -126,31 +131,31 @@ class Game:
 
         indexes_mafia_players = random.sample(range(len(self.list_players)),
                                               k=number_of_mafia)  # choose random players to be mafia
-        list_mafia_id = [self.list_players[i] for i in indexes_mafia_players]  # list of player's id to write them msgs
+        list_mafia_players = [self.list_players[i] for i in indexes_mafia_players]  # list of players to write them msgs
 
-        mafia = Roles.Mafia(list_mafia_id)  # Create instance of class mafia and put ids mafia players
+        mafia = Roles.Mafia(list_mafia_players)  # Create instance of class mafia and put Players of Mafia
         await mafia.notifyMafias(self.bot)  # notify players
         self.__mafia = mafia
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-        civilians = list(set(self.list_players).difference(set(list_mafia_id)))  # list of players without mafia
+        civilians = list(set(self.list_players).difference(set(list_mafia_players)))  # list of players without mafia
         self.__list_innocents = list(civilians)  # take list of innocents
 
         if len(self.list_players) > 3:
-            doctor_id = random.choice(civilians)
-            doctor = Roles.Doctor(doctor_id)  # Create doctor and notify player
+            doctor_player = random.choice(civilians)
+            doctor = Roles.Doctor(doctor_player)  # Create doctor and notify player
             await doctor.notifyDoctor(self.bot)
             self.__doctor = doctor
 
-            civilians.remove(doctor_id)  # list of players without mafia and doctor
+            civilians.remove(doctor_player)  # list of players without mafia and doctor
 
         if len(self.list_players) > 5:
-            detective_id = random.choice(civilians)
-            detective = Roles.Detective(detective_id)  # Create detective and notify player
+            detective_player = random.choice(civilians)
+            detective = Roles.Detective(detective_player)  # Create detective and notify player
             await detective.notifyDetective(self.bot)
             self.__detective = detective
 
-            civilians.remove(detective_id)  # list of citizens
+            civilians.remove(detective_player)  # list of citizens
 
         citizens = Roles.Citizen(civilians)  # Create citizens
         await citizens.notifyCitizens(self.bot)  # Notify players
@@ -163,3 +168,9 @@ class Player:
     def __init__(self, id, name):
         self.__name = name
         self.__id = id
+
+    def get_name(self):
+        return self.__name
+
+    def get_id(self):
+        return self.__id

@@ -27,7 +27,7 @@ async def register(callback: types.CallbackQuery):
         await bot.send_message(chat_id=callback.from_user.id, text="You are already in the game!")
     else:
         await bot.send_message(chat_id=callback.from_user.id, text="You are in the game!")
-        registrationPlayers.addPlayer(callback.from_user.id)
+        registrationPlayers.addPlayer(callback.from_user.id, callback.from_user.full_name)
 
 
 # process callback to vote to kill
