@@ -2,12 +2,13 @@ from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from Game import SignUpForTheGame, Game
+from Game import SignUpForTheGame, Game, Player
 
 TOKEN = '5990396163:AAGOgKqVWSHStXo0CaD-kkD8lCxXdtCnmfY'
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
+main_game = Game()
 
 # class from Game.py for registration
 registrationPlayers = SignUpForTheGame()
@@ -19,15 +20,27 @@ registrationKeyBoard.add(registration)
 
 
 # process callback to registrate player
-@dp.callback_query_handler()
+@dp.callback_query_handler(lambda callback: callback.data == "register")
 async def register(callback: types.CallbackQuery):
-    print(12)
-    if callback.data == 'register':
-        if registrationPlayers.checkPlayerInGame(callback.from_user.id):
-            await bot.send_message(chat_id=callback.from_user.id, text="You are already in the game!")
-        else:
-            await bot.send_message(chat_id=callback.from_user.id, text="You are in the game!")
-            registrationPlayers.addPlayer(callback.from_user.id)
+    print(callback.from_user.id)
+    if registrationPlayers.checkPlayerInGame(callback.from_user.id):
+        await bot.send_message(chat_id=callback.from_user.id, text="You are already in the game!")
+    else:
+        await bot.send_message(chat_id=callback.from_user.id, text="You are in the game!")
+        registrationPlayers.addPlayer(callback.from_user.id)
+
+
+# process callback to vote to kill
+@dp.callback_query_handler(lambda callback: callback.data == "kill")
+async def kill(callback: types.CallbackQuery):
+    victim_username = callback.message.text     # wrong, to fix
+    print(victim_username)
+    victim_username = "@" + victim_username
+    victim_id = await main_game.getChatMemberIdByUsername(victim_username)
+    main_game.votes[victim_id] += 1
+
+    await bot.send_message(chat_id=callback.from_user.id,
+                           text=f"Your vote to kill {victim_username} has been recorded.")
 
 
 # command start
@@ -76,7 +89,8 @@ async def start_game(message: types.Message):
             await message.answer("There are too few of you! Minimum number of players is 4.")
         else:
             await message.answer("Game is start!\nEveryone got their roles in the private messages.")
-            main_game = Game(registrationPlayers.players, bot, message.chat.id)
+            await main_game.setInfo(registrationPlayers.players, bot, message.chat.id)
+            await main_game.start_game()
             await main_game.game()
     else:
         print(message.chat.type)
@@ -86,6 +100,7 @@ async def start_game(message: types.Message):
 @dp.message_handler(commands=['end_game'])
 async def end_game(message: types.Message):
     registrationPlayers.clearListPlayers()  # Clear the list of players
+    main_game.status_game = False
     await message.answer("The game has been ended. Thank you for playing!\n"
                          "You can start a new game by using the /start_game command.")
 
