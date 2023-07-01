@@ -1,5 +1,10 @@
+import asyncio
+
 from aiogram import Bot
 import random
+
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+
 import Roles
 
 
@@ -49,7 +54,7 @@ class Game:
     async def nightCycle(self):
         await self.bot.send_message(chat_id=self.chat_id, text="The night is coming. "
                                                                "The city falls asleep, the mafia wakes up.")
-        victim = await self.chooseVictim(list_mafia)
+        victim = await self.chooseVictim(self.list_mafia)
         self.killPlayer(victim)
         await self.bot.send_message(chat_id=victim, text="You were killed by the Mafia.")
 
