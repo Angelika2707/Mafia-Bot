@@ -18,7 +18,7 @@ registration = InlineKeyboardButton(text="Register", callback_data="register")
 registrationKeyBoard.add(registration)
 
 
-# process callback to registrate player
+# process callback to registrate playerr
 @dp.callback_query_handler()
 async def register(callback: types.CallbackQuery):
     if callback.data == 'register':

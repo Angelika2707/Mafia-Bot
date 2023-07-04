@@ -17,7 +17,7 @@ class Mafia:
         self.players = players
         print(self.players)
 
-    async def notifyMafias(self, bot: Bot):   # this method notify mafia players in game
+    async def notifyMafias(self, bot: Bot):  # this method notify mafia players in game
         for id in self.players:
             await bot.send_message(chat_id=id, text="You are mafia")
 
@@ -26,7 +26,7 @@ class Detective:
     def __init__(self, player):
         self.player = player
 
-    async def notifyDetective(self, bot: Bot):   # this method notify detective player in game
+    async def notifyDetective(self, bot: Bot):  # this method notify detective player in game
         await bot.send_message(chat_id=self.player, text="You are detective")
 
 
