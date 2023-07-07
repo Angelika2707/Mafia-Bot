@@ -27,20 +27,22 @@ async def register(callback: types.CallbackQuery):
         await bot.send_message(chat_id=callback.from_user.id, text="You are already in the game!")
     else:
         await bot.send_message(chat_id=callback.from_user.id, text="You are in the game!")
-        registrationPlayers.addPlayer(callback.from_user.id, callback.from_user.full_name)
+        registrationPlayers.addPlayer(callback.from_user.id, callback.from_user.username)
 
 
 # process callback to vote to kill
-@dp.callback_query_handler(lambda callback: callback.data == "kill")
+@dp.callback_query_handler()
 async def kill(callback: types.CallbackQuery):
-    victim_username = callback.message.text     # wrong, to fix
-    print(victim_username)
-    victim_username = "@" + victim_username
-    victim_id = await main_game.getChatMemberIdByUsername(victim_username)
-    main_game.votes[victim_id] += 1
-
-    await bot.send_message(chat_id=callback.from_user.id,
-                           text=f"Your vote to kill {victim_username} has been recorded.")
+    for player in main_game.list_players:
+        if player.getName() == callback.data:
+            victim_username = callback.data  # wrong, to fix
+            # victim_username = "@" + victim_username
+            # victim_id = await main_game.getChatMemberIdByUsername(victim_username)
+            # main_game.votes[victim_id] += 1
+            await bot.send_message(chat_id=callback.from_user.id,
+                                   text=f"Your vote to kill {victim_username} has been recorded.")
+            main_game.setDay()
+            await main_game.dayCycle()
 
 
 # command start
@@ -91,7 +93,8 @@ async def start_game(message: types.Message):
             await message.answer("Game is start!\nEveryone got their roles in the private messages.")
             await main_game.setInfo(registrationPlayers.players, bot, message.chat.id)
             await main_game.start_game()
-            await main_game.game()
+            await main_game.defineRoles()
+            await main_game.nightCycle()
     else:
         print(message.chat.type)
         await message.answer("This command only for groups")
@@ -103,6 +106,14 @@ async def end_game(message: types.Message):
     main_game.status_game = False
     await message.answer("The game has been ended. Thank you for playing!\n"
                          "You can start a new game by using the /start_game command.")
+
+
+@dp.message_handler()
+async def prohibition_speech_night(message: types.Message):
+    print(main_game.time_of_day)
+    if main_game.time_of_day == "night":
+        print("delete")
+        await bot.delete_message(message.chat.id, message.message_id)
 
 
 # start bot

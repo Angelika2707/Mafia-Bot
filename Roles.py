@@ -9,7 +9,7 @@ class Citizen:
 
     async def notifyCitizens(self, bot: Bot):  # this method notify citizen players in game
         for player in self.__players:
-            await bot.send_message(chat_id=player.get_id(), text="You are citizen")
+            await bot.send_message(chat_id=player.getId(), text="You are citizen")
 
     def getCitizensList(self):
         return self.__players
@@ -22,7 +22,7 @@ class Mafia:
 
     async def notifyMafias(self, bot: Bot):   # this method notify mafia players in game
         for player in self.__players:
-            await bot.send_message(chat_id=player.get_id(), text="You are mafia")
+            await bot.send_message(chat_id=player.getId(), text="You are mafia")
 
     def getMafiaList(self):
         return self.__players
@@ -33,7 +33,7 @@ class Detective:
         self.__player = player
 
     async def notifyDetective(self, bot: Bot):   # this method notify detective player in game
-        await bot.send_message(chat_id=self.__player.get_id(), text="You are detective")
+        await bot.send_message(chat_id=self.__player.getId(), text="You are detective")
 
     def getDetective(self):
         return self.__player
@@ -44,7 +44,7 @@ class Doctor:
         self.__player = player
 
     async def notifyDoctor(self, bot: Bot):  # this method notify doctor player in game
-        await bot.send_message(chat_id=self.__player.get_id(), text="You are doctor")
+        await bot.send_message(chat_id=self.__player.getId(), text="You are doctor")
 
     def getDoctor(self):
         return self.__player
