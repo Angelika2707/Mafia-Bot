@@ -8,12 +8,15 @@ import Roles
 class SignUpForTheGame:  # class implements registration of players
     def __init__(self):
         self.players = list()
+        self.ids = list()
 
-    def addPlayer(self, id):
-        self.players.append(id)
+    def addPlayer(self, id, name):
+        player = Player(id, name)
+        self.players.append(player)
+        self.ids.append(id)
 
     def checkPlayerInGame(self, id):
-        if id not in self.players:
+        if id not in self.ids:
             return False
         else:
             return True
@@ -31,7 +34,6 @@ class Game:
         self.bot = None
         self.chat_id = None
         self.time_of_day = None
-        self.status_game = None
         self.__mafia = None
         self.__citizens = None
         self.__doctor = None
@@ -46,69 +48,44 @@ class Game:
 
     async def start_game(self):
         self.time_of_day = "night"  # flag that defines day cycle
-        self.status_game = True  # while status game == True - game run, endgame when status_game = False
-
-    async def game(self):
-        await self.defineRoles()
-        while self.status_game:
-            if self.time_of_day == "night":
-                await self.nightCycle()
-            else:
-                await self.dayCycle()
 
     # actions for night cycle
     async def nightCycle(self):
+        self.setNight()
         await self.bot.send_message(chat_id=self.chat_id, text="The night is coming. "
                                                                "The city falls asleep, the mafia wakes up.")
-        victim = await self.chooseVictim()
-        self.killPlayer(victim)
-        await self.bot.send_message(chat_id=victim, text="You were killed by the Mafia.")
-
-        self.setDay()
+        await self.showVoteToKill()
 
     # actions for day cycle
     async def dayCycle(self):
+        self.setDay()
+        await self.bot.send_message(chat_id=self.chat_id, text="Mafia has made its choice -_-")
         await self.bot.send_message(chat_id=self.chat_id, text="It's daytime. Discuss and vote for the Mafia.")
-        self.setNight()
 
     # for Mafia players to choose a victim
-    async def chooseVictim(self):
+    async def showVoteToKill(self):
         self.votes = {player: 0 for player in self.__list_innocents}
         choosePlayers = InlineKeyboardMarkup(row_width=len(self.__list_innocents))
-        for id in self.__list_innocents:
-            username = await self.bot.get_chat_member(chat_id=self.chat_id, user_id=id)
-            player = InlineKeyboardButton(text=username.user.username, callback_data="kill")
-            choosePlayers.add(player)
+        for player in self.__list_innocents:
+            username = player.getName()
+            player_to_kill = InlineKeyboardButton(text=username, callback_data=username)
+            choosePlayers.add(player_to_kill)
 
         mafia_members = self.__mafia.getMafiaList()
 
         for member in mafia_members:
-            await self.bot.send_message(chat_id=member, text="Choose a player to kill (write /kill @username)",
+            await self.bot.send_message(chat_id=member.getId(), text="Choose a player to kill",
                                         reply_markup=choosePlayers)
-
-        # Wait for the voting to complete
-        while True:
-            if sum(self.votes.values()) == len(mafia_members):
-                print(sum(self.votes.values()))
-                break
-
-        # Find the player with the maximum votes
-        victim_id = max(self.votes, key=self.votes.get)
-        print("Victim id")
-        print(victim_id)
-        self.votes = {}  # Reset the votes dictionary for the next round of voting
-
-        return victim_id
 
     async def getChatMemberIdByUsername(self, username):
         chat_member = await self.bot.get_chat_member(chat_id=self.chat_id, user_id=username)
         return chat_member.user.id
 
     def setDay(self):
-        self.status_game = "day"
+        self.time_of_day = "day"
 
     def setNight(self):
-        self.status_game = "night"
+        self.time_of_day = "night"
 
     def killPlayer(self, id):  # method for kill citizen
         self.list_players.remove(id)
@@ -163,3 +140,9 @@ class Player:
     def __init__(self, id, name):
         self.__name = name
         self.__id = id
+
+    def getName(self):
+        return self.__name
+
+    def getId(self):
+        return self.__id
