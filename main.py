@@ -22,6 +22,7 @@ registrationKeyBoard.add(registration)
 # process callback to registrate player
 @dp.callback_query_handler(lambda callback: callback.data == "register")
 async def register(callback: types.CallbackQuery):
+    await bot.answer_callback_query(callback_query_id=callback.id)
     print(callback.from_user.id)
     if registrationPlayers.checkPlayerInGame(callback.from_user.id):
         await bot.send_message(chat_id=callback.from_user.id, text="You are already in the game!")
@@ -33,16 +34,23 @@ async def register(callback: types.CallbackQuery):
 # process callback to vote to kill
 @dp.callback_query_handler()
 async def kill(callback: types.CallbackQuery):
+    await bot.answer_callback_query(callback_query_id=callback.id)
     for player in main_game.list_players:
         if player.getName() == callback.data:
-            victim_username = callback.data  # wrong, to fix
-            # victim_username = "@" + victim_username
-            # victim_id = await main_game.getChatMemberIdByUsername(victim_username)
-            # main_game.votes[victim_id] += 1
+            victim_username = callback.data
+            victim = await main_game.getChatMemberByUsername(victim_username)
+            main_game.updateVotes(victim)
+            main_game.updateVoteCount()
             await bot.send_message(chat_id=callback.from_user.id,
-                                   text=f"Your vote to kill {victim_username} has been recorded.")
-            main_game.setDay()
-            await main_game.dayCycle()
+                                   text=f"Your vote to kill {victim_username} has been recorded")
+
+    if main_game.getVoteCount() == len(main_game.getMafia().getMafiaList()):
+        main_game.resetVoteCount()
+        victim = max(main_game.getVotes(), key=main_game.getVotes().get)
+        await main_game.getBot().send_message(chat_id=main_game.getChatId(), text="Mafia has made its choice")
+        main_game.killPlayer(victim)
+        main_game.resetVotes()
+        await main_game.dayCycle()
 
 
 # command start
@@ -110,10 +118,14 @@ async def end_game(message: types.Message):
 
 @dp.message_handler()
 async def prohibition_speech_night(message: types.Message):
-    print(main_game.time_of_day)
     if main_game.time_of_day == "night":
-        print("delete")
         await bot.delete_message(message.chat.id, message.message_id)
+        return
+    print("bbb")
+    for player in main_game.getKilledPlayers():
+        if player.getId() == message.from_user.id:
+            await bot.delete_message(message.chat.id, message.message_id)
+            return
 
 
 # start bot
