@@ -29,6 +29,10 @@ class SignUpForTheGame:  # class implements registration of players
         self.players = list()
         self.ids = list()
 
+    def dataReset(self):
+        self.players = list()
+        self.ids = list()
+
     def addPlayer(self, id, name):
         player = Player(id, name)
         self.players.append(player)
@@ -43,12 +47,25 @@ class SignUpForTheGame:  # class implements registration of players
     def getNumberPlayers(self):
         return len(self.players)
 
-    def clearListPlayers(self):
-        self.players.clear()
-
 
 class Game:
     def __init__(self):
+        self.__vote_count = None
+        self.list_players = None
+        self.bot = None
+        self.chat_id = None
+        self.time_of_day = None
+        self.__mafia = None
+        self.__citizens = None
+        self.__doctor = None
+        self.__detective = None
+        self.__list_innocents = None
+        self.__killed_at_night = None
+        self.__killed_players = None
+        self.__healed_at_night = None
+        self.__votes = None
+
+    def dataReset(self):
         self.__vote_count = None
         self.list_players = None
         self.bot = None
@@ -154,7 +171,7 @@ class Game:
         # it is for debugging, delete in release
         # -------------------------------
         if number_of_mafia == 0:
-            number_of_mafia = 2
+            number_of_mafia = 1
         # -------------------------------
 
         indexes_mafia_players = random.sample(range(len(self.list_players)),

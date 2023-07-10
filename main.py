@@ -152,7 +152,8 @@ async def info_about_game(message: types.Message):
 # create inline keyboard and announce about registration
 @dp.message_handler(commands=['registration'])
 async def registration(message: types.Message):
-    registrationPlayers.clearListPlayers()
+    registrationPlayers.dataReset()
+    main_game.dataReset()
     if message.chat.type == 'group' or message.chat.type == 'supergroup':
         await message.answer("Recruitment for the game", reply_markup=registrationKeyBoard)
     else:
