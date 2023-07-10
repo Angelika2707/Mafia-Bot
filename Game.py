@@ -1,4 +1,4 @@
-from aiogram import Bot, types, Dispatcher
+from aiogram import Bot
 import random
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
@@ -61,6 +61,7 @@ class Game:
         self.__list_innocents = None
         self.__killed_at_night = None
         self.__killed_players = None
+        self.__healed_at_night = None
         self.__votes = None
 
     async def setInfo(self, l: list, bot: Bot, chat_id):
@@ -79,9 +80,8 @@ class Game:
         self.setNight()
         await self.bot.send_message(chat_id=self.chat_id, text="The night is coming. "
                                                                "The city falls asleep")
-
-        await self.bot.send_message(chat_id=self.chat_id, text="Mafia is waking up. They are choosing their victim")
         await self.showVoteToKill()
+        await self.bot.send_message(chat_id=self.chat_id, text="Mafia is waking up. They are choosing their victim")
 
     # actions for day cycle
     async def dayCycle(self):
@@ -92,10 +92,11 @@ class Game:
                                                                    f"was killed that night. His role is "
                                                                    f"{self.__killed_at_night.getRole().value}")
         else:
-            await self.bot.send_message(chat_id=self.chat_id, text="Nobody died this night.")
+            await self.bot.send_message(chat_id=self.chat_id, text="Nobody died this night")
 
         self.resetNightVictimMafia()
         await self.bot.send_message(chat_id=self.chat_id, text="It's daytime. Discuss and vote for the Mafia")
+        await self.bot.send_message(chat_id=self.chat_id, text="Use command /start_voting to start voting for players")
 
     # for Mafia players to choose a victim
     async def showVoteToKill(self):
@@ -103,7 +104,8 @@ class Game:
         choosePlayers = InlineKeyboardMarkup(row_width=len(self.__list_innocents))
         for player in self.__list_innocents:
             username = player.getName()
-            player_to_kill = InlineKeyboardButton(text=username, callback_data=username)
+            callback_data_mafia = "mafia_kill_" + username
+            player_to_kill = InlineKeyboardButton(text=username, callback_data=callback_data_mafia)
             choosePlayers.add(player_to_kill)
 
         mafia_members = self.__mafia.getMafiaList()
@@ -113,7 +115,7 @@ class Game:
                                         reply_markup=choosePlayers)
 
     async def getChatMemberByUsername(self, username):
-        for player in self.__list_innocents:
+        for player in self.list_players:
             if player.getName() == username:
                 return player
         return None
@@ -124,10 +126,25 @@ class Game:
     def setNight(self):
         self.time_of_day = "night"
 
-    def killPlayer(self, player):  # method for kill citizen
-        self.list_players.remove(player)
+    async def killPlayer(self, player):     # method for kill citizen
         self.__killed_at_night = player
+        self.list_players.remove(player)
+        self.__citizens.removeFromCitizensList(player)
+        self.__list_innocents.remove(player)
         self.__killed_players.append(player)
+
+    async def voteOut(self, player):
+        self.list_players.remove(player)
+        self.__killed_players.append(player)
+        print(self.__killed_players)
+        if player.getRole() == Roles.Role.MAFIA:
+            self.__mafia.removeFromMafiaList(player)
+        elif player.getRole() == Roles.Role.CITIZEN:
+            self.__citizens.removeFromCitizensList(player)
+            self.__list_innocents.remove(player)
+
+    def healPlayer(self, player):
+        self.__healed_at_night = player
 
     async def defineRoles(self):
         # DEFINE MAFIAS PLAYERS
@@ -137,7 +154,7 @@ class Game:
         # it is for debugging, delete in release
         # -------------------------------
         if number_of_mafia == 0:
-            number_of_mafia = 1
+            number_of_mafia = 2
         # -------------------------------
 
         indexes_mafia_players = random.sample(range(len(self.list_players)),
@@ -147,29 +164,30 @@ class Game:
 
         mafia = Roles.Mafia(list_mafia)  # Create instance of class mafia and put ids mafia players
         await mafia.notifyMafias(self.bot)  # notify players
+        await mafia.showMafiaTeammates(self.bot)
         self.__mafia = mafia
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
         civilians = list(set(self.list_players).difference(set(list_mafia)))  # list of players without mafia
         self.__list_innocents = list(civilians)  # take list of innocents
 
-        if len(self.list_players) > 3:
-            doctor = random.choice(civilians)
-            doctor.setRole(Roles.Role.DOCTOR)
-            doctor = Roles.Doctor(doctor)  # Create doctor and notify player
+        if len(self.list_players) > 16:
+            doctor_player = random.choice(civilians)
+            doctor_player.setRole(Roles.Role.DOCTOR)
+            doctor = Roles.Doctor(doctor_player)  # Create doctor and notify player
             await doctor.notifyDoctor(self.bot)
             self.__doctor = doctor
 
-            civilians.remove(doctor)  # list of players without mafia and doctor
+            civilians.remove(doctor_player)  # list of players without mafia and doctor
 
-        if len(self.list_players) > 5:
-            detective = random.choice(civilians)
-            detective.setRole(Roles.Role.DETECTIVE)
-            detective = Roles.Detective(detective)  # Create detective and notify player
+        if len(self.list_players) > 16:
+            detective_player = random.choice(civilians)
+            detective_player.setRole(Roles.Role.DETECTIVE)
+            detective = Roles.Detective(detective_player)  # Create detective and notify player
             await detective.notifyDetective(self.bot)
             self.__detective = detective
 
-            civilians.remove(detective)  # list of citizens
+            civilians.remove(detective_player)  # list of citizens
 
         [player.setRole(Roles.Role.CITIZEN) for player in civilians]
         citizens = Roles.Citizen(civilians)  # Create citizens
@@ -187,7 +205,7 @@ class Game:
     def getKilledPlayers(self):
         return self.__killed_players
 
-    def updateVotes(self, player: Player):
+    def updateVotes(self, player):
         self.__votes[player] += 1
 
     def updateVoteCount(self):
@@ -213,3 +231,9 @@ class Game:
 
     def resetNightVictimMafia(self):
         self.__killed_at_night = None
+
+    def resetNightHealedPlayer(self):
+        self.__healed_at_night = None
+
+    def setVotes(self, votes):
+        self.__votes = votes
