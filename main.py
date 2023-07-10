@@ -2,7 +2,9 @@ from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from Game import SignUpForTheGame, Game, Player
+
+import Roles
+from Game import SignUpForTheGame, Game
 
 TOKEN = '5990396163:AAGOgKqVWSHStXo0CaD-kkD8lCxXdtCnmfY'
 
@@ -32,25 +34,39 @@ async def register(callback: types.CallbackQuery):
 
 
 # process callback to vote to kill
-@dp.callback_query_handler()
+@dp.callback_query_handler(text_startswith="mafia_kill_")
 async def kill(callback: types.CallbackQuery):
     await bot.answer_callback_query(callback_query_id=callback.id)
-    for player in main_game.list_players:
-        if player.getName() == callback.data:
-            victim_username = callback.data
-            victim = await main_game.getChatMemberByUsername(victim_username)
-            main_game.updateVotes(victim)
-            main_game.updateVoteCount()
-            await bot.send_message(chat_id=callback.from_user.id,
-                                   text=f"Your vote to kill {victim_username} has been recorded")
+    victim_username = callback.data.replace("mafia_kill_", "")
+    if len(main_game.getMafia().getMafiaList()) > 1:    # check
+        message = f"Player {callback.from_user.username} decided to kill {victim_username}"
+        mafia_players = main_game.getMafia().getMafiaList()
+        current_player = await main_game.getChatMemberByUsername(callback.from_user.username)
+        current_player_id = current_player.getId()
+        for player in mafia_players:
+            if player.getId() != current_player_id:
+                await main_game.getBot().send_message(chat_id=player.getId(), text=message)
+    victim = await main_game.getChatMemberByUsername(victim_username)
+    main_game.updateVotes(victim)
+    main_game.updateVoteCount()
+    await bot.send_message(chat_id=callback.from_user.id, text=f"Your vote to kill {victim_username} has been recorded")
 
     if main_game.getVoteCount() == len(main_game.getMafia().getMafiaList()):
         main_game.resetVoteCount()
         victim = max(main_game.getVotes(), key=main_game.getVotes().get)
         await main_game.getBot().send_message(chat_id=main_game.getChatId(), text="Mafia has made its choice")
-        main_game.killPlayer(victim)
+        await main_game.killPlayer(victim)
         main_game.resetVotes()
         await main_game.dayCycle()
+
+
+@dp.callback_query_handler(text_startswith="doctor_heal_")
+async def heal(callback: types.CallbackQuery):
+    await bot.answer_callback_query(callback_query_id=callback.id)
+    username = callback.data.replace("doctor_heal_", "")
+    healed_player = await main_game.getChatMemberByUsername(username)
+    main_game.healPlayer(healed_player)
+    await main_game.showVoteToKill()
 
 
 # command start
@@ -58,6 +74,60 @@ async def kill(callback: types.CallbackQuery):
 async def info_about_game(message: types.Message):  # message.answer = написать в чат
     await message.answer("Hello!\nI am a host bot that allows you to play Mafia online in Telegram. To do this, "
                          "you just need to add a bot to the group and follow the instructions.")
+
+
+@dp.message_handler(commands=['start_voting'])
+async def day_voting(message: types.Message):
+    if main_game.time_of_day == "day":
+        await main_game.getBot().send_message(chat_id=main_game.getChatId(), text="Use '/vote @username' to vote for "
+                                                                                  "a player")
+        votes = {player: 0 for player in main_game.getPlayers()}
+        main_game.setVotes(votes)
+    else:
+        await message.answer("Voting can only be started during the day")
+
+
+@dp.message_handler(commands=['vote'])
+async def voting(message: types.Message):
+    username = message.text.split('@')[1].strip()
+    voted_player = await main_game.getChatMemberByUsername(username)
+    if voted_player:
+        # Update the votes
+        main_game.updateVotes(voted_player)
+        main_game.updateVoteCount()
+        await main_game.getBot().send_message(chat_id=message.from_user.id, text=f"You voted for {username}")
+
+        # Get the current vote counts
+        votes = main_game.getVotes()
+
+        # Generate the vote summary
+        vote_summary = "Votes:\n"
+        for player, count in votes.items():
+            if count != 0:
+                vote_summary += f"{player.getName()}: {count}\n"
+
+        # Send the vote summary message
+        await main_game.getBot().send_message(chat_id=main_game.getChatId(), text=vote_summary)
+    else:
+        await main_game.getBot().send_message(chat_id=main_game.getChatId(), text="Player is not found")
+
+    if main_game.getVoteCount() == len(main_game.getPlayers()):
+        main_game.resetVoteCount()
+        max_votes = max(main_game.getVotes().values())
+        max_voted_players = [player.getName() for player, count in main_game.getVotes().items() if count == max_votes]
+        if len(max_voted_players) > 1:
+            await main_game.getBot().send_message(chat_id=main_game.getChatId(),
+                                                  text="No one was voted out during the day voting")
+        else:
+            await main_game.getBot().send_message(chat_id=main_game.getChatId(),
+                                                  text=f"As a result of the vote, "
+                                                       f"player {max_voted_players[0]} was voted out")
+            voted_out_player = await main_game.getChatMemberByUsername(max_voted_players[0])
+            if voted_out_player.getRole() == Roles.Mafia:
+                await main_game.getMafia().showRemainingMafiaTeammates(main_game.getBot())
+            await main_game.voteOut(voted_out_player)
+        main_game.resetVotes()
+        await main_game.nightCycle()
 
 
 # print rules of game
@@ -121,7 +191,6 @@ async def prohibition_speech_night(message: types.Message):
     if main_game.time_of_day == "night":
         await bot.delete_message(message.chat.id, message.message_id)
         return
-    print("bbb")
     for player in main_game.getKilledPlayers():
         if player.getId() == message.from_user.id:
             await bot.delete_message(message.chat.id, message.message_id)
