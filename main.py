@@ -38,7 +38,7 @@ async def register(callback: types.CallbackQuery):
 async def kill(callback: types.CallbackQuery):
     await bot.answer_callback_query(callback_query_id=callback.id)
     victim_username = callback.data.replace("mafia_kill_", "")
-    if len(main_game.getMafia().getMafiaList()) > 1:    # check
+    if len(main_game.getMafia().getMafiaList()) > 1:    
         message = f"Player {callback.from_user.username} decided to kill {victim_username}"
         mafia_players = main_game.getMafia().getMafiaList()
         current_player = await main_game.getChatMemberByUsername(callback.from_user.username)
@@ -46,16 +46,22 @@ async def kill(callback: types.CallbackQuery):
         for player in mafia_players:
             if player.getId() != current_player_id:
                 await main_game.getBot().send_message(chat_id=player.getId(), text=message)
-    victim = await main_game.getChatMemberByUsername(victim_username)
-    main_game.updateVotes(victim)
+    chosen_victim = await main_game.getChatMemberByUsername(victim_username)
+    main_game.updateVotes(chosen_victim)
     main_game.updateVoteCount()
     await bot.send_message(chat_id=callback.from_user.id, text=f"Your vote to kill {victim_username} has been recorded")
 
     if main_game.getVoteCount() == len(main_game.getMafia().getMafiaList()):
         main_game.resetVoteCount()
-        victim = max(main_game.getVotes(), key=main_game.getVotes().get)
         await main_game.getBot().send_message(chat_id=main_game.getChatId(), text="Mafia has made its choice")
-        await main_game.killPlayer(victim)
+        max_votes = max(main_game.getVotes().values())
+        max_voted_players = [player.getName() for player, count in main_game.getVotes().items() if count == max_votes]
+        if len(max_voted_players) > 1:
+            await main_game.getBot().send_message(chat_id=main_game.getChatId(),
+                                                  text="This night Mafia could not reach an agreement")
+        else:
+            victim = await main_game.getChatMemberByUsername(max_voted_players[0])
+            await main_game.killPlayer(victim)
         main_game.resetVotes()
         await main_game.dayCycle()
 
@@ -181,7 +187,8 @@ async def start_game(message: types.Message):
 
 @dp.message_handler(commands=['end_game'])
 async def end_game(message: types.Message):
-    registrationPlayers.clearListPlayers()  # Clear the list of players
+    registrationPlayers.dataReset()
+    main_game.dataReset()
     main_game.status_game = False
     await message.answer("The game has been ended. Thank you for playing!\n"
                          "You can start a new game by using the /start_game command.")
