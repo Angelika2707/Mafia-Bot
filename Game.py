@@ -64,6 +64,7 @@ class Game:
         self.__killed_players = None
         self.__healed_at_night = None
         self.__votes = None
+        self.__status_game = False
 
     def dataReset(self):
         self.__vote_count = None
@@ -80,6 +81,7 @@ class Game:
         self.__killed_players = None
         self.__healed_at_night = None
         self.__votes = None
+        self.__status_game = False
 
     async def setInfo(self, l: list, bot: Bot, chat_id):
         self.list_players = l  # ids of players
@@ -91,29 +93,35 @@ class Game:
 
     async def start_game(self):
         self.time_of_day = "night"  # flag that defines day cycle
+        self.__status_game = True
 
     # actions for night cycle
     async def nightCycle(self):
-        self.setNight()
-        await self.bot.send_message(chat_id=self.chat_id, text="The night is coming. "
-                                                               "The city falls asleep")
-        await self.showVoteToKill()
-        await self.bot.send_message(chat_id=self.chat_id, text="Mafia is waking up. They are choosing their victim")
+        await self.check_players()
+        if self.__status_game:
+            self.setNight()
+            await self.bot.send_message(chat_id=self.chat_id, text="The night is coming. "
+                                                                   "The city falls asleep")
+            await self.showVoteToKill()
+            await self.bot.send_message(chat_id=self.chat_id, text="Mafia is waking up. They are choosing their victim")
+            await self.check_players()
 
     # actions for day cycle
     async def dayCycle(self):
-        self.setDay()
-        if self.__killed_at_night is not None:
-            await self.bot.send_message(chat_id=self.__killed_at_night.getId(), text="You were killed by mafia")
-            await self.bot.send_message(chat_id=self.chat_id, text=f"Player {self.__killed_at_night.getName()} "
-                                                                   f"was killed that night. His role is "
-                                                                   f"{self.__killed_at_night.getRole().value}")
-        else:
-            await self.bot.send_message(chat_id=self.chat_id, text="Nobody died this night")
+        await self.check_players()
+        if self.__status_game:
+            self.setDay()
+            if self.__killed_at_night is not None:
+                await self.bot.send_message(chat_id=self.__killed_at_night.getId(), text="You were killed by mafia")
+                await self.bot.send_message(chat_id=self.chat_id, text=f"Player {self.__killed_at_night.getName()} "
+                                                                       f"was killed that night. His role is "
+                                                                       f"{self.__killed_at_night.getRole().value}")
+            else:
+                await self.bot.send_message(chat_id=self.chat_id, text="Nobody died this night")
 
-        self.resetNightVictimMafia()
-        await self.bot.send_message(chat_id=self.chat_id, text="It's daytime. Discuss and vote for the Mafia")
-        await self.bot.send_message(chat_id=self.chat_id, text="Use command /start_voting to start voting for players")
+            self.resetNightVictimMafia()
+            await self.bot.send_message(chat_id=self.chat_id, text="It's daytime. Discuss and vote for the Mafia")
+            await self.bot.send_message(chat_id=self.chat_id, text="Use command /start_voting to start voting for players")
 
     # for Mafia players to choose a victim
     async def showVoteToKill(self):
@@ -131,6 +139,8 @@ class Game:
             await self.bot.send_message(chat_id=member.getId(), text="Choose a player to kill",
                                         reply_markup=choosePlayers)
 
+        await self.check_players()
+
     async def getChatMemberByUsername(self, username):
         for player in self.list_players:
             if player.getName() == username:
@@ -143,7 +153,7 @@ class Game:
     def setNight(self):
         self.time_of_day = "night"
 
-    async def killPlayer(self, player):     # method for kill citizen
+    async def killPlayer(self, player):  # method for kill citizen
         self.__killed_at_night = player
         self.list_players.remove(player)
         self.__citizens.removeFromCitizensList(player)
@@ -211,7 +221,15 @@ class Game:
         await citizens.notifyCitizens(self.bot)  # Notify players
         self.__citizens = citizens
 
-        # We have to complete defines roles
+    async def check_players(self):
+        number_mafia = len(self.__mafia.getMafiaList())
+        if number_mafia == 0:
+            self.__status_game = False
+            await self.bot.send_message(chat_id=self.chat_id, text="The number of citizens is less than the number of mafia. Citizens won!")
+        if number_mafia == len(self.__citizens.getCitizensList()):
+            self.__status_game = False
+            await self.bot.send_message(chat_id=self.chat_id, text="The number of citizens is equal to the number of mafia. Mafia won!")
+
 
     def getMafia(self):
         return self.__mafia

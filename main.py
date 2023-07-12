@@ -180,6 +180,7 @@ async def start_game(message: types.Message):
             await main_game.start_game()
             await main_game.defineRoles()
             await main_game.nightCycle()
+            await main_game.check_players()
     else:
         print(message.chat.type)
         await message.answer("This command only for groups")
