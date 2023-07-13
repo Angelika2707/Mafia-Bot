@@ -84,6 +84,10 @@ async def info_about_game(message: types.Message):  # message.answer = напи�
 
 @dp.message_handler(commands=['start_voting'])
 async def day_voting(message: types.Message):
+    if await main_game.getChatMemberByUsername(message.from_user.username) not in main_game.getPlayers():
+        await bot.delete_message(message.chat.id, message.message_id)
+        await main_game.getBot().send_message(chat_id=message.from_user.id, text="You cannot use this command")
+        return
     if main_game.time_of_day == "day":
         await main_game.getBot().send_message(chat_id=main_game.getChatId(), text="Use '/vote @username' to vote for "
                                                                                   "a player")
@@ -95,6 +99,10 @@ async def day_voting(message: types.Message):
 
 @dp.message_handler(commands=['vote'])
 async def voting(message: types.Message):
+    if await main_game.getChatMemberByUsername(message.from_user.username) not in main_game.getPlayers():
+        await bot.delete_message(message.chat.id, message.message_id)
+        await main_game.getBot().send_message(chat_id=message.from_user.id, text="You cannot vote")
+        return
     username = message.text.split('@')[1].strip()
     voted_player = await main_game.getChatMemberByUsername(username)
     if voted_player:
