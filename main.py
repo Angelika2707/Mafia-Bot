@@ -20,6 +20,10 @@ registrationKeyBoard = InlineKeyboardMarkup(row_width=1)
 registration = InlineKeyboardButton(text="Register", callback_data="register")
 registrationKeyBoard.add(registration)
 
+referenceKeyBoard = InlineKeyboardMarkup(row_width=1)
+reference = InlineKeyboardButton(text="Text to Bot", url="https://t.me/InnopolisMafiaBot")
+referenceKeyBoard.add(reference)
+
 
 # process callback to registrate player
 @dp.callback_query_handler(lambda callback: callback.data == "register")
@@ -38,7 +42,7 @@ async def register(callback: types.CallbackQuery):
 async def kill(callback: types.CallbackQuery):
     await bot.answer_callback_query(callback_query_id=callback.id)
     victim_username = callback.data.replace("mafia_kill_", "")
-    if len(main_game.getMafia().getMafiaList()) > 1:    
+    if len(main_game.getMafia().getMafiaList()) > 1:
         message = f"Player {callback.from_user.username} decided to kill {victim_username}"
         mafia_players = main_game.getMafia().getMafiaList()
         current_player = await main_game.getChatMemberByUsername(callback.from_user.username)
@@ -147,6 +151,8 @@ async def voting(message: types.Message):
 # print rules of game
 @dp.message_handler(commands=['rules'])
 async def info_about_game(message: types.Message):
+    await message.answer('Before the game you need to write the command "/start" to the bot If you are playing for '
+                         'the first time', reply_markup=referenceKeyBoard)
     await message.answer(
         '-- THE AIM OF THE GAME --\n\nThe aim of the game is different for the Mafia and Citizen players. '
         'Citizens will want to unmask the Mafia players. At the same time, the Mafia will want to '
@@ -169,7 +175,7 @@ async def registration(message: types.Message):
     registrationPlayers.dataReset()
     main_game.dataReset()
     if message.chat.type == 'group' or message.chat.type == 'supergroup':
-        await message.answer("Recruitment for the game", reply_markup=registrationKeyBoard)
+        await message.answer("Recruitment for the game\n", reply_markup=registrationKeyBoard)
     else:
         print(message.chat.type)
         await message.answer("This command only for groups")
@@ -200,14 +206,25 @@ async def end_game(message: types.Message):
     main_game.dataReset()
     main_game.status_game = False
     await message.answer("The game has been ended. Thank you for playing!\n"
-                         "You can start a new game by using the /start_game command.")
+                         "You can start a new registration by using the /registration command.")
 
 
 @dp.message_handler()
 async def prohibition_speech_night(message: types.Message):
+    flag_not_player = False
+
     if main_game.time_of_day == "night":
         await bot.delete_message(message.chat.id, message.message_id)
         return
+
+    for player in main_game.getKilledPlayers():
+        if player.getId() == message.from_user.id:
+            flag_not_player = True
+
+    if flag_not_player:
+        await bot.delete_message(message.chat.id, message.message_id)
+        return
+
     for player in main_game.getKilledPlayers():
         if player.getId() == message.from_user.id:
             await bot.delete_message(message.chat.id, message.message_id)
