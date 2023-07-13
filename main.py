@@ -191,6 +191,7 @@ async def start_game(message: types.Message):
         else:
             await message.answer("Game is start!\nEveryone got their roles in the private messages.")
             await main_game.setInfo(registrationPlayers.players, bot, message.chat.id)
+            registrationPlayers.dataReset()
             await main_game.start_game()
             await main_game.defineRoles()
             await main_game.nightCycle()

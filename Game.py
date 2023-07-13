@@ -108,7 +108,6 @@ class Game:
 
     # actions for day cycle
     async def dayCycle(self):
-        await self.check_players()
         if self.__status_game:
             self.setDay()
             if self.__killed_at_night is not None:
@@ -120,6 +119,7 @@ class Game:
                 await self.bot.send_message(chat_id=self.chat_id, text="Nobody died this night")
 
             self.resetNightVictimMafia()
+            await self.check_players()
             await self.bot.send_message(chat_id=self.chat_id, text="It's daytime. Discuss and vote for the Mafia")
             await self.bot.send_message(chat_id=self.chat_id, text="Use command /start_voting to start voting for players")
 
@@ -225,10 +225,12 @@ class Game:
         number_mafia = len(self.__mafia.getMafiaList())
         if number_mafia == 0:
             self.__status_game = False
-            await self.bot.send_message(chat_id=self.chat_id, text="The number of citizens is less than the number of mafia. Citizens won!")
-        if number_mafia == len(self.__citizens.getCitizensList()):
+            await self.bot.send_message(chat_id=self.chat_id, text="The number of citizens is bigger than the number of mafia. Citizens won!")
+            self.dataReset()
+        if number_mafia >= len(self.__citizens.getCitizensList()):
             self.__status_game = False
             await self.bot.send_message(chat_id=self.chat_id, text="The number of citizens is equal to the number of mafia. Mafia won!")
+            self.dataReset()
 
 
     def getMafia(self):
