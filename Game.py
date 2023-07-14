@@ -1,7 +1,6 @@
 from aiogram import Bot
 import random
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-
 import Roles
 
 
@@ -142,6 +141,7 @@ class Game:
             self.resetMovedAtNight()
             self.resetNightVictimMafia()
             self.resetNightHealedPlayer()
+            self.resetNightCheckedPlayer()
             await self.check_players()
             await self.bot.send_message(chat_id=self.chat_id, text="It's daytime. Discuss and vote for the Mafia")
             await self.bot.send_message(chat_id=self.chat_id, text="Use command /start_voting to start voting for "
@@ -229,9 +229,14 @@ class Game:
         print(self.__killed_players)
         if player.getRole() == Roles.Role.MAFIA:
             self.__mafia.removeFromMafiaList(player)
-        elif player.getRole() == Roles.Role.CITIZEN:
-            self.__citizens.removeFromCitizensList(player)
+        else:
             self.__list_innocents.remove(player)
+            if player.getRole() == Roles.Role.DOCTOR:
+                self.__doctor.setDoctor(None)
+            elif player.getRole() == Roles.Role.DETECTIVE:
+                self.__detective.setDetective(None)
+            else:
+                self.__citizens.removeFromCitizensList(player)
 
     async def defineRoles(self):
         # DEFINE MAFIAS PLAYERS
@@ -293,7 +298,7 @@ class Game:
             await self.bot.send_message(chat_id=self.chat_id, text="The number of citizens is bigger than the number "
                                                                    "of mafia. Citizens won!")
             self.dataReset()
-        if number_mafia >= len(self.__citizens.getCitizensList()):
+        if number_mafia >= len(self.__list_innocents):
             self.__status_game = False
             await self.bot.send_message(chat_id=self.chat_id, text="The number of citizens is equal to the number of "
                                                                    "mafia. Mafia won!")
@@ -343,6 +348,9 @@ class Game:
 
     def resetNightHealedPlayer(self):
         self.__healed_at_night = None
+
+    def resetNightCheckedPlayer(self):
+        self.__checked_at_night = None
 
     def setVotes(self, votes):
         self.__votes = votes
