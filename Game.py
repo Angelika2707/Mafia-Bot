@@ -67,6 +67,7 @@ class Game:
         self.__status_game = False
         self.__active_roles = None
         self.__moved_at_night = None
+        self.__who_voted_during_day = None
 
     def dataReset(self):
         self.__vote_count = None
@@ -87,6 +88,7 @@ class Game:
         self.__status_game = False
         self.__active_roles = None
         self.__moved_at_night = None
+        self.__who_voted_during_day = None
 
     async def setInfo(self, l: list, bot: Bot, chat_id):
         self.list_players = l  # ids of players
@@ -97,6 +99,7 @@ class Game:
         self.__killed_players = []
         self.__active_roles = []
         self.__moved_at_night = {}
+        self.__who_voted_during_day = []
 
     async def start_game(self):
         self.time_of_day = "night"  # flag that defines day cycle
@@ -368,3 +371,12 @@ class Game:
             if not moved:
                 return False
         return True
+
+    def getWhoVoted(self):
+        return self.__who_voted_during_day
+
+    def resetWhoVoted(self):
+        self.__who_voted_during_day = []
+
+    def addVoter(self, player):
+        self.__who_voted_during_day.append(player)

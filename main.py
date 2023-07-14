@@ -122,13 +122,19 @@ async def day_voting(message: types.Message):
 
 @dp.message_handler(commands=['vote'])
 async def voting(message: types.Message):
-    if await main_game.getChatMemberByUsername(message.from_user.username) not in main_game.getPlayers():
+    who_voted = await main_game.getChatMemberByUsername(message.from_user.username)
+    if who_voted not in main_game.getPlayers():
         await bot.delete_message(message.chat.id, message.message_id)
         await main_game.getBot().send_message(chat_id=message.from_user.id, text="You cannot vote")
         return
     username = message.text.split('@')[1].strip()
     voted_player = await main_game.getChatMemberByUsername(username)
     if voted_player:
+        if who_voted in main_game.getWhoVoted():
+            await bot.delete_message(message.chat.id, message.message_id)
+            await main_game.getBot().send_message(chat_id=message.from_user.id, text="You have already voted this day")
+            return
+        main_game.addVoter(who_voted)
         # Update the votes
         main_game.updateVotes(voted_player)
         main_game.updateVoteCount()
@@ -150,6 +156,7 @@ async def voting(message: types.Message):
 
     if main_game.getVoteCount() == len(main_game.getPlayers()):
         main_game.resetVoteCount()
+        main_game.resetWhoVoted()
         max_votes = max(main_game.getVotes().values())
         max_voted_players = [player.getName() for player, count in main_game.getVotes().items() if count == max_votes]
         if len(max_voted_players) > 1:
@@ -231,6 +238,8 @@ async def end_game(message: types.Message):
 
 @dp.message_handler()
 async def prohibition_speech_night(message: types.Message):
+    if message.text.startswith("!"):
+        return
     flag_not_player = False
 
     if main_game.time_of_day == "night":
