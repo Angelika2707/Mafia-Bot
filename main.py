@@ -56,6 +56,7 @@ async def kill(callback: types.CallbackQuery):
     await bot.send_message(chat_id=callback.from_user.id, text=f"Your vote to kill {victim_username} has been recorded")
 
     if main_game.getVoteCount() == len(main_game.getMafia().getMafiaList()):
+        await main_game.confirmMove(Roles.Role.MAFIA)
         main_game.resetVoteCount()
         await main_game.getBot().send_message(chat_id=main_game.getChatId(), text="Mafia has made its choice")
         max_votes = max(main_game.getVotes().values())
@@ -67,16 +68,34 @@ async def kill(callback: types.CallbackQuery):
             victim = await main_game.getChatMemberByUsername(max_voted_players[0])
             await main_game.killPlayer(victim)
         main_game.resetVotes()
-        await main_game.dayCycle()
+        if await main_game.checkNightMoves():
+            await main_game.dayCycle()
 
 
 @dp.callback_query_handler(text_startswith="doctor_heal_")
 async def heal(callback: types.CallbackQuery):
     await bot.answer_callback_query(callback_query_id=callback.id)
+    await main_game.getBot().send_message(chat_id=main_game.getChatId(), text="Doctor went to the call")
     username = callback.data.replace("doctor_heal_", "")
     healed_player = await main_game.getChatMemberByUsername(username)
-    main_game.healPlayer(healed_player)
-    await main_game.showVoteToKill()
+    await main_game.healPlayer(healed_player)
+    await main_game.confirmMove(Roles.Role.DOCTOR)
+    if await main_game.checkNightMoves():
+        await main_game.dayCycle()
+
+
+@dp.callback_query_handler(text_startswith="detective_check_")
+async def check_role(callback: types.CallbackQuery):
+    await bot.answer_callback_query(callback_query_id=callback.id)
+    await main_game.getBot().send_message(chat_id=main_game.getChatId(), text="The detective went to check")
+    username = callback.data.replace("detective_check_", "")
+    checked_player = await main_game.getChatMemberByUsername(username)
+    await main_game.checkRoleOfPlayer(checked_player)
+    await bot.send_message(chat_id=callback.from_user.id, text=f"The role of checked player {checked_player.getName()} "
+                                                               f"is {checked_player.getRole().value}")
+    await main_game.confirmMove(Roles.Role.DETECTIVE)
+    if await main_game.checkNightMoves():
+        await main_game.dayCycle()
 
 
 # command start
