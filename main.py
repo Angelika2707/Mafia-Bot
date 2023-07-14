@@ -238,8 +238,6 @@ async def end_game(message: types.Message):
 
 @dp.message_handler()
 async def prohibition_speech_night(message: types.Message):
-    if message.text.startswith("!"):
-        return
     flag_not_player = False
 
     if main_game.time_of_day == "night":
