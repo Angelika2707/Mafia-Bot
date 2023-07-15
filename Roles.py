@@ -13,16 +13,16 @@ class Citizen:
     def __init__(self, players):
         self.__players = players
 
-    async def notifyCitizens(self, bot: Bot):
+    async def notify_citizens(self, bot: Bot):
         """
         Notify citizens about their role in the game.
 
         :param bot: The Telegram bot.
         """
         for player in self.__players:
-            await bot.send_message(chat_id=player.getId(), text=f"You are {Role.CITIZEN.value}")
+            await bot.send_message(chat_id=player.get_id(), text=f"You are {Role.CITIZEN.value}")
 
-    def getCitizensList(self):
+    def get_citizens_list(self):
         """
         Get the list of citizens.
 
@@ -30,15 +30,15 @@ class Citizen:
         """
         return self.__players
 
-    def setCitizensList(self, list):
+    def set_citizens_list(self, list_players):
         """
         Set the list of citizens.
 
-        :param list: List of citizens.
+        :param list_players: List of citizens.
         """
-        self.__players = list
+        self.__players = list_players
 
-    def removeFromCitizensList(self, player):
+    def remove_from_citizens_list(self, player):
         """
         Remove a player from the list of citizens.
 
@@ -51,16 +51,16 @@ class Mafia:
     def __init__(self, players):
         self.__players = players
 
-    async def notifyMafias(self, bot: Bot):
+    async def notify_mafias(self, bot: Bot):
         """
         Notify mafia about their role in the game.
 
         :param bot: The Telegram bot.
         """
         for player in self.__players:
-            await bot.send_message(chat_id=player.getId(), text=f"You are {Role.MAFIA.value}")
+            await bot.send_message(chat_id=player.get_id(), text=f"You are {Role.MAFIA.value}")
 
-    def getMafiaList(self):
+    def get_mafia_list(self):
         """
         Get the list of mafia players.
 
@@ -68,15 +68,15 @@ class Mafia:
         """
         return self.__players
 
-    def setMafiaList(self, list):
+    def set_mafia_list(self, list_players):
         """
         Set the list of mafia players.
 
-        :param list: List of mafia players.
+        :param list_players: List of mafia players.
         """
-        self.__players = list
+        self.__players = list_players
 
-    def removeFromMafiaList(self, player):
+    def remove_from_mafia_list(self, player):
         """
         Remove a player from the list of mafia players.
 
@@ -84,7 +84,7 @@ class Mafia:
         """
         self.__players.remove(player)
 
-    async def showMafiaTeammates(self, bot: Bot):
+    async def show_mafia_teammates(self, bot: Bot):
         """
         Show the mafia teammates to each mafia player.
 
@@ -94,10 +94,10 @@ class Mafia:
             return
         else:
             for player in self.__players:
-                teammates = [p.getName() for p in self.__players if p != player]
-                await bot.send_message(chat_id=player.getId(), text=f"Your Mafia teammates: {', '.join(teammates)}")
+                teammates = [p.get_name() for p in self.__players if p != player]
+                await bot.send_message(chat_id=player.get_id(), text=f"Your Mafia teammates: {', '.join(teammates)}")
 
-    async def showRemainingMafiaTeammates(self, bot: Bot):
+    async def show_remaining_mafia_teammates(self, bot: Bot):
         """
         Show the remaining mafia teammates to each mafia player after one teammate is voted out.
 
@@ -107,24 +107,25 @@ class Mafia:
             return
         else:
             for player in self.__players:
-                teammates = [p.getName() for p in self.__players if p != player]
-                await bot.send_message(chat_id=player.getId(), text="You have lost one of your teammates")
-                await bot.send_message(chat_id=player.getId(), text=f"Remaining Mafia teammates: {', '.join(teammates)}")
+                teammates = [p.get_name() for p in self.__players if p != player]
+                await bot.send_message(chat_id=player.get_id(), text="You have lost one of your teammates")
+                await bot.send_message(chat_id=player.get_id(),
+                                       text=f"Remaining Mafia teammates: {', '.join(teammates)}")
 
 
 class Detective:
     def __init__(self, player):  # player - id of the player
         self.__player = player
 
-    async def notifyDetective(self, bot: Bot):
+    async def notify_detective(self, bot: Bot):
         """
         Notify the detective about their role in the game.
 
         :param bot: The Telegram bot.
         """
-        await bot.send_message(chat_id=self.__player.getId(), text=f"You are {Role.DETECTIVE.value}")
+        await bot.send_message(chat_id=self.__player.get_id(), text=f"You are {Role.DETECTIVE.value}")
 
-    def getDetective(self):
+    def get_detective(self):
         """
         Get the detective player.
 
@@ -132,7 +133,7 @@ class Detective:
         """
         return self.__player
 
-    def setDetective(self, player):
+    def set_detective(self, player):
         """
         Set the detective player.
 
@@ -145,15 +146,15 @@ class Doctor:
     def __init__(self, player):
         self.__player = player
 
-    async def notifyDoctor(self, bot: Bot):
+    async def notify_doctor(self, bot: Bot):
         """
         Notify the doctor about their role in the game.
 
         :param bot: The Telegram bot.
         """
-        await bot.send_message(chat_id=self.__player.getId(), text=f"You are {Role.DOCTOR.value}")
+        await bot.send_message(chat_id=self.__player.get_id(), text=f"You are {Role.DOCTOR.value}")
 
-    def getDoctor(self):
+    def get_doctor(self):
         """
         Get the doctor player.
 
@@ -161,7 +162,7 @@ class Doctor:
         """
         return self.__player
 
-    def setDoctor(self, player):
+    def set_doctor(self, player):
         """
         Set the doctor player.
 
