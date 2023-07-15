@@ -2,18 +2,18 @@
 This module initializes and configures the Telegram bot to play Mafia.
 It handles various callbacks, commands, and messages to conduct gameplay.
 """
-
+import Roles
+import configparser
 from aiogram import Bot, types
-from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
+from Game import SignUpForTheGame, Game
+from aiogram.dispatcher import Dispatcher
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-import Roles
-from Game import SignUpForTheGame, Game
+config = configparser.ConfigParser()
+config.read("settings.ini")
 
-TOKEN = '5990396163:AAGOgKqVWSHStXo0CaD-kkD8lCxXdtCnmfY'
-
-bot = Bot(token=TOKEN)
+bot = Bot(token=config['Telegram']["token"])
 dp = Dispatcher(bot)
 main_game = Game()
 
@@ -107,8 +107,9 @@ async def check_role(callback: types.CallbackQuery):
     username = callback.data.replace("detective_check_", "")
     checked_player = await main_game.get_chat_member_by_username(username)
     await main_game.check_role_of_player(checked_player)
-    await bot.send_message(chat_id=callback.from_user.id, text=f"The role of checked player {checked_player.get_name()} "
-                                                               f"is {checked_player.get_role().value}")
+    await bot.send_message(chat_id=callback.from_user.id,
+                           text=f"The role of checked player {checked_player.get_name()} "
+                                f"is {checked_player.get_role().value}")
     await main_game.confirm_move(Roles.Role.DETECTIVE)
     if await main_game.check_night_moves():  # checking that all active roles have made a move at night
         await main_game.day_cycle()
@@ -192,7 +193,7 @@ async def voting(message: types.Message):
             await bot.send_message(chat_id=main_game.get_chat_id(), text="No one was voted out during the day voting")
         else:
             await bot.send_message(chat_id=main_game.get_chat_id(), text=f"As a result of the vote, player "
-                                                                       f"{max_voted_players[0]} was voted out")
+                                                                         f"{max_voted_players[0]} was voted out")
             voted_out_player = await main_game.get_chat_member_by_username(max_voted_players[0])
             if voted_out_player.get_role() == Roles.Mafia:
                 await main_game.get_mafia().show_remaining_mafia_teammates(bot)
