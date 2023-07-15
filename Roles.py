@@ -1,5 +1,5 @@
-from aiogram import Bot
 from enum import Enum
+from aiogram import Bot
 
 
 class Role(Enum):

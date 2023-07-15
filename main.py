@@ -10,11 +10,15 @@ from Game import SignUpForTheGame, Game
 from aiogram.dispatcher import Dispatcher
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
+# import token for telegram bot
 config = configparser.ConfigParser()
 config.read("settings.ini")
 
+# create bot class
 bot = Bot(token=config['Telegram']["token"])
 dp = Dispatcher(bot)
+
+# main class of mafia game
 main_game = Game()
 
 # class from Game.py for registration
@@ -34,6 +38,9 @@ reference_key_board.add(reference)
 # process callback to registrate player
 @dp.callback_query_handler(lambda callback: callback.data == "register")
 async def register(callback: types.CallbackQuery):
+    """
+    Callback handler for registration in game.
+    """
     await bot.answer_callback_query(callback_query_id=callback.id)
     if registrationPlayers.check_player_in_game(callback.from_user.id):
         await bot.send_message(chat_id=callback.from_user.id, text="You are already in the game!")
@@ -118,6 +125,9 @@ async def check_role(callback: types.CallbackQuery):
 # command start
 @dp.message_handler(commands=['start'])
 async def info_about_game(message: types.Message):  # message.answer = написать в чат
+    """
+    Message handler for the '/start' command. Give basic information about mafia bot.
+    """
     await message.answer("Hello!\nI am a host bot that allows you to play Mafia online in Telegram. To do this, "
                          "you just need to add a bot to the group and follow the instructions.")
 
@@ -205,6 +215,9 @@ async def voting(message: types.Message):
 # print rules of game
 @dp.message_handler(commands=['rules'])
 async def info_about_game(message: types.Message):
+    """
+    Message handler for the '/rules' command. Show information about rules in game.
+    """
     await message.answer('Before the game you need to write the command "/start" to the bot If you are playing for '
                          'the first time', reply_markup=reference_key_board)
     await message.answer(
@@ -226,9 +239,12 @@ async def info_about_game(message: types.Message):
 # create inline keyboard and announce about registration
 @dp.message_handler(commands=['registration'])
 async def registration(message: types.Message):
+    """
+    Message handler for the '/registration' command. Initiates the registration for game.
+    """
     registrationPlayers.data_reset()
     main_game.data_reset()
-    if message.chat.type == 'group' or message.chat.type == 'supergroup':
+    if message.chat.type == 'group' or message.chat.type == 'supergroup':  # command available only for groups with bot
         await message.answer("Recruitment for the game\n", reply_markup=registration_key_board)
     else:
         print(message.chat.type)
@@ -238,6 +254,9 @@ async def registration(message: types.Message):
 # start game
 @dp.message_handler(commands=['start_game'])
 async def start_game(message: types.Message):
+    """
+        Message handler for the '/start_game' command. Start game.
+    """
     if message.chat.type == 'group' or message.chat.type == 'supergroup':  # this command only for chats
         print(registrationPlayers.get_number_players())
         if registrationPlayers.get_number_players() <= 0:  # check that players are enough for game
@@ -257,7 +276,10 @@ async def start_game(message: types.Message):
 
 @dp.message_handler(commands=['end_game'])
 async def end_game(message: types.Message):
-    registrationPlayers.data_reset()
+    """
+        Message handler for the '/end_game' command. Game interruption during a game session.
+    """
+    registrationPlayers.data_reset()  # reset data about users
     main_game.data_reset()
     main_game.status_game = False
     await message.answer("The game has been ended. Thank you for playing!\n"
@@ -266,9 +288,12 @@ async def end_game(message: types.Message):
 
 @dp.message_handler()
 async def prohibition_speech_night(message: types.Message):
+    """
+        Message handler for messages. Prohibit recording at night for players and prohibit recording
+        to non-players and killed players.
+    """
     flag_not_player = False
-
-    if main_game.get_time_of_day() == "night":
+    if main_game.get_time_of_day() == "night":  # prohibition to write at night
         await bot.delete_message(message.chat.id, message.message_id)
         return
 
@@ -276,11 +301,11 @@ async def prohibition_speech_night(message: types.Message):
         if player.get_id() == message.from_user.id:
             flag_not_player = True
 
-    if flag_not_player:
+    if flag_not_player:  # prohibition to write for non-players
         await bot.delete_message(message.chat.id, message.message_id)
         return
 
-    for player in main_game.get_killed_players():
+    for player in main_game.get_killed_players():  # prohibition to write non-players
         if player.get_id() == message.from_user.id:
             await bot.delete_message(message.chat.id, message.message_id)
             return

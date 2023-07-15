@@ -1,7 +1,7 @@
-from aiogram import Bot
-import random
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import Roles
+import random
+from aiogram import Bot
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 class Player:
@@ -262,7 +262,8 @@ class Game:
         """
         self.__votes = {player: 0 for player in self.__list_innocents}  # change dictionary to collect votes from mafia
         choose_players = InlineKeyboardMarkup(row_width=len(self.__list_innocents))
-        for player in self.__list_innocents:
+
+        for player in self.__list_innocents:  # create inline button with every citizen
             username = player.get_name()
             callback_data_mafia = "mafia_kill_" + username
             player_to_kill = InlineKeyboardButton(text=username, callback_data=callback_data_mafia)
@@ -279,7 +280,7 @@ class Game:
         Create and show the doctor a keyboard with players so that he can select a player to heal.
         """
         choose_players = InlineKeyboardMarkup(row_width=len(self.__list_players))
-        for player in self.__list_players:
+        for player in self.__list_players:  # create inline button with every citizen
             username = player.get_name()
             callback_data_doctor = "doctor_heal_" + username
             player_to_heal = InlineKeyboardButton(text=username, callback_data=callback_data_doctor)
@@ -294,7 +295,7 @@ class Game:
         Create and show the detective a keyboard with players so that he can select a player to check their role.
         """
         choose_players = InlineKeyboardMarkup(row_width=len(self.__list_players) - 1)
-        for player in self.__list_players:
+        for player in self.__list_players: # create inline button with every citizen
             if player != self.__detective.get_detective():
                 username = player.get_name()
                 callback_data_detective = "detective_check_" + username
