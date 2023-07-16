@@ -210,6 +210,7 @@ class Game:
         await self.check_players()
         if self.__status_game:
             self.setNight()
+            await self.__bot.send_photo(chat_id=self.__chat_id, photo=open("images/night_city.jpg", "rb"))
             await self.__bot.send_message(chat_id=self.__chat_id, text="The night is coming. The city falls asleep")
             await self.showVoteToKill()  # give the mafia the opportunity to choose a victim
             await self.__bot.send_message(chat_id=self.__chat_id, text="Mafia is waking up. They are choosing their "
@@ -254,6 +255,7 @@ class Game:
             self.resetNightHealedPlayer()
             self.resetNightCheckedPlayer()
             await self.check_players()  # check conditions for win
+            await self.__bot.send_photo(chat_id=self.__chat_id, photo=open("images/day_city.jpg", "rb"))
             await self.__bot.send_message(chat_id=self.__chat_id, text="It's daytime. Discuss and vote for the Mafia")
             await self.__bot.send_message(chat_id=self.__chat_id, text="Use command /start_voting to start voting for "
                                                                        "players")
@@ -453,12 +455,14 @@ class Game:
         number_mafia = len(self.__mafia.getMafiaList())
         if number_mafia == 0:
             self.__status_game = False
+            await self.__bot.send_photo(chat_id=self.__chat_id, photo=open("images/citizens.jpg", "rb"))
             await self.__bot.send_message(chat_id=self.__chat_id,
                                           text="The number of citizens is bigger than the number "
                                                "of mafia. Citizens won!")
             self.dataReset()
         if number_mafia >= len(self.__list_innocents):
             self.__status_game = False
+            await self.__bot.send_photo(chat_id=self.__chat_id, photo=open("images/mafia_together.jpg", "rb"))
             await self.__bot.send_message(chat_id=self.__chat_id,
                                           text="The number of citizens is equal to the number of "
                                                "mafia. Mafia won!")
