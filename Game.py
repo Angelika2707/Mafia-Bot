@@ -401,6 +401,7 @@ class Game:
                 self.__citizens.removeFromCitizensList(player)
 
     async def defineRoles(self):
+
         """
         Define the roles for the players in the game.
         """

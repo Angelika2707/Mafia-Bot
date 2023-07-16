@@ -249,6 +249,7 @@ async def registration(message: types.Message):
 # start game
 @dp.message_handler(commands=['start_game'])
 async def start_game(message: types.Message):
+
     """
     Message handler for the '/start_game' command. Start game for registered players.
     """

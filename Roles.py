@@ -7,6 +7,7 @@ from aiogram import Bot
 from enum import Enum
 import random
 
+
 class Role(Enum):
     """
     Represents roles in the game.
