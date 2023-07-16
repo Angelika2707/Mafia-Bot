@@ -1,7 +1,12 @@
-import Roles
-import random
+"""
+This module controls the flow of the game.
+It does player registration, keeps track of the day/night cycle, emergency game interruptions.
+"""
+
 from aiogram import Bot
+import random
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+import Roles
 
 
 class Player:
@@ -17,7 +22,7 @@ class Player:
         self.__id = id
         self.__role = None
 
-    def get_name(self):
+    def getName(self):
         """
         Get the username of the player.
 
@@ -25,7 +30,7 @@ class Player:
         """
         return self.__name
 
-    def get_id(self):
+    def getId(self):
         """
         Get the ID of the player.
 
@@ -33,7 +38,7 @@ class Player:
         """
         return self.__id
 
-    def set_role(self, role: Roles.Role):
+    def setRole(self, role: Roles.Role):
         """
         Set the role of the player.
 
@@ -41,7 +46,7 @@ class Player:
         """
         self.__role = role
 
-    def get_role(self):
+    def getRole(self):
         """
         Get the role of the player.
 
@@ -59,37 +64,37 @@ class SignUpForTheGame:
         self.players = list()
         self.ids = list()
 
-    def data_reset(self):
+    def dataReset(self):
         """
         Reset the player and ID lists.
         """
         self.players = list()
         self.ids = list()
 
-    def add_player(self, player_id, name):
+    def addPlayer(self, id, name):
         """
         Add a player to the game.
 
-        :param player_id: The player's ID.
+        :param id: The player's ID.
         :param name: The player's username.
         """
-        player = Player(player_id, name)
+        player = Player(id, name)
         self.players.append(player)
-        self.ids.append(player_id)
+        self.ids.append(id)
 
-    def check_player_in_game(self, player_id):
+    def checkPlayerInGame(self, id):
         """
         Check if a player is already in the game.
 
-        :param player_id: The player's ID.
+        :param id: The player's ID.
         :return: True if the player is in the game, False otherwise.
         """
-        if player_id not in self.ids:
+        if id not in self.ids:
             return False
         else:
             return True
 
-    def get_number_players(self):
+    def getNumberPlayers(self):
         """
         Get the number of players in the game.
 
@@ -149,7 +154,7 @@ class Game:
         self.__moved_at_night = None
         self.__who_voted_during_day = None
 
-    def data_reset(self):
+    def dataReset(self):
         """
         Reset the game data.
         """
@@ -173,15 +178,15 @@ class Game:
         self.__moved_at_night = None
         self.__who_voted_during_day = None
 
-    async def set_info(self, list_players: list, bot: Bot, chat_id):
+    async def setInfo(self, l: list, bot: Bot, chat_id):
         """
         Set the game information.
 
-        :param list_players: List of player IDs.
+        :param l: List of player IDs.
         :param bot: The Telegram bot.
         :param chat_id: The ID of the chat.
         """
-        self.__list_players = list_players
+        self.__list_players = l
         self.__bot = bot
         self.__chat_id = chat_id
         self.__vote_count = 0
@@ -198,117 +203,111 @@ class Game:
         self.__time_of_day = "night"  # flag that defines day cycle
         self.__status_game = True
 
-    async def night_cycle(self):
+    async def nightCycle(self):
         """
         Perform the night cycle actions.
         """
         await self.check_players()
         if self.__status_game:
-            self.set_night()
-            await self.__bot.send_photo(chat_id=self.__chat_id, photo=open("images/night_city.jpg", "rb"))
+            self.setNight()
             await self.__bot.send_message(chat_id=self.__chat_id, text="The night is coming. The city falls asleep")
-            await self.show_vote_to_kill()  # give the mafia the opportunity to choose a victim
+            await self.showVoteToKill()  # give the mafia the opportunity to choose a victim
             await self.__bot.send_message(chat_id=self.__chat_id, text="Mafia is waking up. They are choosing their "
                                                                        "victim")
             # if there is a doctor or detective in the game, then let them choose a player for the night action
             if self.__doctor is not None:
-                await self.show_players_to_heal()
+                await self.showPlayersToHeal()
             if self.__detective is not None:
-                await self.show_players_to_check_role()
+                await self.showPlayersToCheckRole()
         await self.check_players()
 
-    async def day_cycle(self):
+    async def dayCycle(self):
         """
         Perform the day cycle actions.
         """
         if self.__status_game:
-            self.set_day()
+            self.setDay()
             # actions if no one saved the player chosen by the mafia
-            if self.__killed_at_night is not None and not (self.check_player_healed_by_doctor() or
-                                                           self.check_player_saved_by_detective()):
+            if self.__killed_at_night is not None and not (self.checkPlayerHealedByDoctor() or
+                                                           self.checkPlayerSavedByDetective()):
                 await self.killing(self.__killed_at_night)
-                await self.__bot.send_message(chat_id=self.__killed_at_night.get_id(), text="You were killed by mafia")
-                await self.__bot.send_message(chat_id=self.__chat_id,
-                                              text=f"Player {self.__killed_at_night.get_name()} "
-                                                   "was killed that night. Their role was "
-                                                   f"{self.__killed_at_night.get_role().value}")
+                await self.__bot.send_message(chat_id=self.__killed_at_night.getId(), text="You were killed by mafia")
+                await self.__bot.send_message(chat_id=self.__chat_id, text=f"Player {self.__killed_at_night.getName()} "
+                                                                           "was killed that night. His role was "
+                                                                           f"{self.__killed_at_night.getRole().value}")
             # actions if the player chosen by the mafia was saved by the doctor
-            elif self.__killed_at_night is not None and self.check_player_healed_by_doctor():
-                await self.__bot.send_message(chat_id=self.__chat_id,
-                                              text=f"Player {self.__killed_at_night.get_name()} "
-                                                   f"was saved that night. Doctor has "
-                                                   f"healed them")
+            elif self.__killed_at_night is not None and self.checkPlayerHealedByDoctor():
+                await self.__bot.send_message(chat_id=self.__chat_id, text=f"Player {self.__killed_at_night.getName()} "
+                                                                           f"was saved that night. Doctor has "
+                                                                           f"healed him")
             # actions if the player chosen by the mafia was saved by the detective
-            elif self.__killed_at_night is not None and self.check_player_saved_by_detective():
-                await self.__bot.send_message(chat_id=self.__chat_id,
-                                              text=f"Player {self.__killed_at_night.get_name()} "
-                                                   f"was saved that night. Detective scared "
-                                                   f"the mafia")
+            elif self.__killed_at_night is not None and self.checkPlayerSavedByDetective():
+                await self.__bot.send_message(chat_id=self.__chat_id, text=f"Player {self.__killed_at_night.getName()} "
+                                                                           f"was saved that night. Detective scared "
+                                                                           f"the mafia")
             # if the mafia didn't kill anyone
             else:
                 await self.__bot.send_message(chat_id=self.__chat_id, text="Nobody died this night")
 
-            self.reset_moved_at_night()
-            self.reset_night_victim_mafia()
-            self.reset_night_healed_player()
-            self.reset_night_checked_player()
+            self.resetMovedAtNight()
+            self.resetNightVictimMafia()
+            self.resetNightHealedPlayer()
+            self.resetNightCheckedPlayer()
             await self.check_players()  # check conditions for win
-            await self.__bot.send_photo(chat_id=self.__chat_id, photo=open("images/day_city.jpg", "rb"))
             await self.__bot.send_message(chat_id=self.__chat_id, text="It's daytime. Discuss and vote for the Mafia")
             await self.__bot.send_message(chat_id=self.__chat_id, text="Use command /start_voting to start voting for "
                                                                        "players")
 
-    async def show_vote_to_kill(self):
+    async def showVoteToKill(self):
         """
         Create and show mafia players a keyboard with players so that they can select a player to kill.
         """
         self.__votes = {player: 0 for player in self.__list_innocents}  # change dictionary to collect votes from mafia
-        choose_players = InlineKeyboardMarkup(row_width=len(self.__list_innocents))
-
-        for player in self.__list_innocents:  # create inline button with every citizen
-            username = player.get_name()
+        choosePlayers = InlineKeyboardMarkup(row_width=len(self.__list_innocents))
+        for player in self.__list_innocents:
+            username = player.getName()
             callback_data_mafia = "mafia_kill_" + username
             player_to_kill = InlineKeyboardButton(text=username, callback_data=callback_data_mafia)
-            choose_players.add(player_to_kill)
+            choosePlayers.add(player_to_kill)
 
-        mafia_members = self.__mafia.get_mafia_list()
+        mafia_members = self.__mafia.getMafiaList()
 
         for member in mafia_members:
-            await self.__bot.send_message(chat_id=member.get_id(), text="Choose a player to kill",
-                                          reply_markup=choose_players)
+            await self.__bot.send_message(chat_id=member.getId(), text="Choose a player to kill",
+                                          reply_markup=choosePlayers)
 
-    async def show_players_to_heal(self):
+    async def showPlayersToHeal(self):
         """
         Create and show the doctor a keyboard with players so that he can select a player to heal.
         """
         choose_players = InlineKeyboardMarkup(row_width=len(self.__list_players))
-        for player in self.__list_players:  # create inline button with every citizen
-            username = player.get_name()
+        for player in self.__list_players:
+            username = player.getName()
             callback_data_doctor = "doctor_heal_" + username
             player_to_heal = InlineKeyboardButton(text=username, callback_data=callback_data_doctor)
             choose_players.add(player_to_heal)
 
-        doctor = self.__doctor.get_doctor()
-        await self.__bot.send_message(chat_id=doctor.get_id(), text="Choose a player to heal",
+        doctor = self.__doctor.getDoctor()
+        await self.__bot.send_message(chat_id=doctor.getId(), text="Choose a player to heal",
                                       reply_markup=choose_players)
 
-    async def show_players_to_check_role(self):
+    async def showPlayersToCheckRole(self):
         """
         Create and show the detective a keyboard with players so that he can select a player to check their role.
         """
         choose_players = InlineKeyboardMarkup(row_width=len(self.__list_players) - 1)
-        for player in self.__list_players: # create inline button with every citizen
-            if player != self.__detective.get_detective():
-                username = player.get_name()
+        for player in self.__list_players:
+            if player != self.__detective.getDetective():
+                username = player.getName()
                 callback_data_detective = "detective_check_" + username
                 player_to_check = InlineKeyboardButton(text=username, callback_data=callback_data_detective)
                 choose_players.add(player_to_check)
 
-        detective = self.__detective.get_detective()
-        await self.__bot.send_message(chat_id=detective.get_id(), text="Choose a player for checking role",
+        detective = self.__detective.getDetective()
+        await self.__bot.send_message(chat_id=detective.getId(), text="Choose a player for checking role",
                                       reply_markup=choose_players)
 
-    async def get_chat_member_by_username(self, username):
+    async def getChatMemberByUsername(self, username):
         """
         Get the chat member by their username.
 
@@ -316,23 +315,23 @@ class Game:
         :return: The Player object or None if not found.
         """
         for player in self.__list_players:
-            if player.get_name() == username:
+            if player.getName() == username:
                 return player
         return None
 
-    def set_day(self):
+    def setDay(self):
         """
         Set the time to daytime.
         """
         self.__time_of_day = "day"
 
-    def set_night(self):
+    def setNight(self):
         """
         Set the time of day to nighttime.
         """
         self.__time_of_day = "night"
 
-    async def kill_player(self, player):
+    async def killPlayer(self, player):
         """
         Save the player selected by the mafia at night for killing.
 
@@ -340,7 +339,7 @@ class Game:
         """
         self.__killed_at_night = player
 
-    async def heal_player(self, player):
+    async def healPlayer(self, player):
         """
         Save the player selected by the doctor at night for healing.
 
@@ -348,7 +347,7 @@ class Game:
         """
         self.__healed_at_night = player
 
-    async def check_role_of_player(self, player):
+    async def checkRoleOfPlayer(self, player):
         """
         Save the player selected by the detective at night for checking.
 
@@ -367,18 +366,18 @@ class Game:
         self.__list_innocents.remove(player)
         self.__killed_players.append(player)
         # actions depending on the role of the player
-        if player.get_role() == Roles.Role.DETECTIVE:
-            self.__detective.set_detective(None)
+        if player.getRole() == Roles.Role.DETECTIVE:
+            self.__detective.setDetective(None)
             self.__moved_at_night.pop(Roles.Role.DETECTIVE)
             self.__active_roles.remove(Roles.Role.DETECTIVE)
-        elif player.get_role() == Roles.Role.DOCTOR:
-            self.__doctor.set_doctor(None)
+        elif player.getRole() == Roles.Role.DOCTOR:
+            self.__doctor.setDoctor(None)
             self.__moved_at_night.pop(Roles.Role.DOCTOR)
             self.__active_roles.remove(Roles.Role.DOCTOR)
         else:
-            self.__citizens.remove_from_citizens_list(player)
+            self.__citizens.removeFromCitizensList(player)
 
-    async def delete_player(self, player):
+    async def deletePlayer(self, player):
         """
         Delete a player according to results of day voting.
 
@@ -388,31 +387,32 @@ class Game:
         self.__list_players.remove(player)
         self.__killed_players.append(player)
         # role dependent actions
-        if player.get_role() == Roles.Role.MAFIA:
-            self.__mafia.remove_from_mafia_list(player)
+        if player.getRole() == Roles.Role.MAFIA:
+            self.__mafia.removeFromMafiaList(player)
         else:
             self.__list_innocents.remove(player)
-            if player.get_role() == Roles.Role.DOCTOR:
-                self.__doctor.set_doctor(None)
-            elif player.get_role() == Roles.Role.DETECTIVE:
-                self.__detective.set_detective(None)
+            if player.getRole() == Roles.Role.DOCTOR:
+                self.__doctor.setDoctor(None)
+            elif player.getRole() == Roles.Role.DETECTIVE:
+                self.__detective.setDetective(None)
             else:
-                self.__citizens.remove_from_citizens_list(player)
+                self.__citizens.removeFromCitizensList(player)
 
-    async def define_roles(self):
+    async def defineRoles(self):
         """
         Define the roles for the players in the game.
         """
-        # define mafia
+        # define mafias players
         number_of_mafia = int(len(self.__list_players) / 4)
+
         indexes_mafia_players = random.sample(range(len(self.__list_players)),
                                               k=number_of_mafia)  # choose random players to be mafia
         list_mafia = [self.__list_players[i] for i in indexes_mafia_players]  # list of mafia players
-        [player.set_role(Roles.Role.MAFIA) for player in list_mafia]
+        [player.setRole(Roles.Role.MAFIA) for player in list_mafia]
 
         mafia = Roles.Mafia(list_mafia)  # Create instance of class mafia and put ids mafia players
-        await mafia.notify_mafias(self.__bot)  # notify players
-        await mafia.show_mafia_teammates(self.__bot)
+        await mafia.notifyMafias(self.__bot)  # notify players
+        await mafia.showMafiaTeammates(self.__bot)
         self.__mafia = mafia
         self.__active_roles.append(Roles.Role.MAFIA)
 
@@ -421,9 +421,9 @@ class Game:
 
         if len(self.__list_players) > 3:
             doctor_player = random.choice(civilians)
-            doctor_player.set_role(Roles.Role.DOCTOR)
+            doctor_player.setRole(Roles.Role.DOCTOR)
             doctor = Roles.Doctor(doctor_player)  # Create doctor and notify player
-            await doctor.notify_doctor(self.__bot)
+            await doctor.notifyDoctor(self.__bot)
             self.__doctor = doctor
             self.__active_roles.append(Roles.Role.DOCTOR)
 
@@ -431,17 +431,17 @@ class Game:
 
         if len(self.__list_players) > 5:
             detective_player = random.choice(civilians)
-            detective_player.set_role(Roles.Role.DETECTIVE)
+            detective_player.setRole(Roles.Role.DETECTIVE)
             detective = Roles.Detective(detective_player)  # Create detective and notify player
-            await detective.notify_detective(self.__bot)
+            await detective.notifyDetective(self.__bot)
             self.__detective = detective
             self.__active_roles.append(Roles.Role.DETECTIVE)
 
             civilians.remove(detective_player)  # list of citizens
 
-        [player.set_role(Roles.Role.CITIZEN) for player in civilians]
+        [player.setRole(Roles.Role.CITIZEN) for player in civilians]
         citizens = Roles.Citizen(civilians)  # Create citizens
-        await citizens.notify_citizens(self.__bot)  # Notify players
+        await citizens.notifyCitizens(self.__bot)  # Notify players
         self.__citizens = citizens
         for role in self.__active_roles:
             self.__moved_at_night[role] = False
@@ -450,22 +450,21 @@ class Game:
         """
         Check the number of players in the teams and end the game if the conditions for any of them to win are met.
         """
-        number_mafia = len(self.__mafia.get_mafia_list())
+        number_mafia = len(self.__mafia.getMafiaList())
         if number_mafia == 0:
             self.__status_game = False
-            await self.__bot.send_photo(chat_id=self.__chat_id, photo=open("images/citizens.jpg", "rb"))
             await self.__bot.send_message(chat_id=self.__chat_id,
-                                          text="There is no mafia left. Citizens won!")
-            self.data_reset()
+                                          text="The number of citizens is bigger than the number "
+                                               "of mafia. Citizens won!")
+            self.dataReset()
         if number_mafia >= len(self.__list_innocents):
             self.__status_game = False
-            await self.__bot.send_photo(chat_id=self.__chat_id, photo=open("images/mafia_together.jpg", "rb"))
             await self.__bot.send_message(chat_id=self.__chat_id,
                                           text="The number of citizens is equal to the number of "
                                                "mafia. Mafia won!")
-            self.data_reset()
+            self.dataReset()
 
-    def check_player_healed_by_doctor(self):
+    def checkPlayerHealedByDoctor(self):
         """
         Check if player selected by mafia to kill was healed by the doctor.
 
@@ -473,7 +472,7 @@ class Game:
         """
         return self.__killed_at_night == self.__healed_at_night
 
-    def check_player_saved_by_detective(self):
+    def checkPlayerSavedByDetective(self):
         """
         Check if player selected by mafia to kill was saved by the visit of the detective.
 
@@ -481,7 +480,7 @@ class Game:
         """
         return self.__killed_at_night == self.__checked_at_night
 
-    def get_mafia(self):
+    def getMafia(self):
         """
         Get the Mafia instance.
 
@@ -489,7 +488,7 @@ class Game:
         """
         return self.__mafia
 
-    def get_players(self):
+    def getPlayers(self):
         """
         Get the list of players in the game.
 
@@ -497,7 +496,7 @@ class Game:
         """
         return self.__list_players
 
-    def get_killed_players(self):
+    def getKilledPlayers(self):
         """
         Get the list of killed or voted out players.
 
@@ -505,7 +504,7 @@ class Game:
         """
         return self.__killed_players
 
-    def update_votes(self, player):
+    def updateVotes(self, player):
         """
         Update the votes for a player.
 
@@ -513,19 +512,19 @@ class Game:
         """
         self.__votes[player] += 1
 
-    def update_vote_count(self):
+    def updateVoteCount(self):
         """
         Update the vote count after player vote.
         """
         self.__vote_count += 1
 
-    def reset_vote_count(self):
+    def resetVoteCount(self):
         """
         Reset the vote count after finishing voting.
         """
         self.__vote_count = 0
 
-    def get_vote_count(self):
+    def getVoteCount(self):
         """
         Get the vote count.
 
@@ -533,7 +532,7 @@ class Game:
         """
         return self.__vote_count
 
-    def get_votes(self):
+    def getVotes(self):
         """
         Get the dictionary with votes.
 
@@ -541,13 +540,13 @@ class Game:
         """
         return self.__votes
 
-    def reset_votes(self):
+    def resetVotes(self):
         """
         Reset the dictionary with votes.
         """
         self.__votes = {}
 
-    def get_chat_id(self):
+    def getChatId(self):
         """
         Get the chat ID.
 
@@ -555,25 +554,25 @@ class Game:
         """
         return self.__chat_id
 
-    def reset_night_victim_mafia(self):
+    def resetNightVictimMafia(self):
         """
         Reset the victim chosen by mafia to kill during the night.
         """
         self.__killed_at_night = None
 
-    def reset_night_healed_player(self):
+    def resetNightHealedPlayer(self):
         """
         Reset the player chosen by the doctor to heal during the night.
         """
         self.__healed_at_night = None
 
-    def reset_night_checked_player(self):
+    def resetNightCheckedPlayer(self):
         """
         Reset the player chosen by the detective to check their role during the night.
         """
         self.__checked_at_night = None
 
-    def set_votes(self, votes):
+    def setVotes(self, votes):
         """
         Get a dictionary with votes and set it as the dictionary used in the class.
 
@@ -581,14 +580,14 @@ class Game:
         """
         self.__votes = votes
 
-    def reset_moved_at_night(self):
+    def resetMovedAtNight(self):
         """
         Reset night action flags for all remaining active roles.
         """
         for role in self.__active_roles:
             self.__moved_at_night[role] = False
 
-    async def confirm_move(self, role: Roles.Role):
+    async def confirmMove(self, role: Roles.Role):
         """
         Confirm the move of an active role during the night.
 
@@ -596,7 +595,7 @@ class Game:
         """
         self.__moved_at_night[role] = True
 
-    async def check_night_moves(self):
+    async def checkNightMoves(self):
         """
         Check if all night moves of active roles have been confirmed (this is for checking that all active
         roles made a move at night).
@@ -608,7 +607,7 @@ class Game:
                 return False
         return True
 
-    def get_who_voted(self):
+    def getWhoVoted(self):
         """
         Get the list of players who voted during the day.
 
@@ -616,13 +615,13 @@ class Game:
         """
         return self.__who_voted_during_day
 
-    def reset_who_voted(self):
+    def resetWhoVoted(self):
         """
         Reset the list of players who voted during the day.
         """
         self.__who_voted_during_day = []
 
-    def add_voter(self, player):
+    def addVoter(self, player):
         """
         Add a player to the list of players who voted during the day (after getting a vote from player).
 
@@ -630,7 +629,7 @@ class Game:
         """
         self.__who_voted_during_day.append(player)
 
-    def get_time_of_day(self):
+    def getTimeOfDay(self):
         """
         Get the time of day in the game.
 

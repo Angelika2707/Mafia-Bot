@@ -1,9 +1,17 @@
-from enum import Enum
+"""
+This module defines role in the gameпо.
+Classes notify players of their role, stores lists of players with the same roles.
+"""
+
 from aiogram import Bot
-import random
+from enum import Enum
 
 
 class Role(Enum):
+    """
+    Represents roles in the game.
+    """
+
     CITIZEN = 'citizen'
     DETECTIVE = 'detective'
     MAFIA = 'mafia'
@@ -11,20 +19,24 @@ class Role(Enum):
 
 
 class Citizen:
+    """
+    Represents a citizen in the game.
+
+    :param players: Players that was defined as citizens.
+    """
     def __init__(self, players):
         self.__players = players
 
-    async def notify_citizens(self, bot: Bot):
+    async def notifyCitizens(self, bot: Bot):
         """
         Notify citizens about their role in the game.
 
         :param bot: The Telegram bot.
         """
         for player in self.__players:
-            await bot.send_photo(chat_id=player.get_id(), photo=open("images/citizen (2).jpg", "rb"))
-            await bot.send_message(chat_id=player.get_id(), text=f"You are {Role.CITIZEN.value}")
+            await bot.send_message(chat_id=player.getId(), text=f"You are {Role.CITIZEN.value}")
 
-    def get_citizens_list(self):
+    def getCitizensList(self):
         """
         Get the list of citizens.
 
@@ -32,7 +44,7 @@ class Citizen:
         """
         return self.__players
 
-    def set_citizens_list(self, list_players):
+    def setCitizensList(self, list_players):
         """
         Set the list of citizens.
 
@@ -40,7 +52,7 @@ class Citizen:
         """
         self.__players = list_players
 
-    def remove_from_citizens_list(self, player):
+    def removeFromCitizensList(self, player):
         """
         Remove a player from the list of citizens.
 
@@ -50,21 +62,24 @@ class Citizen:
 
 
 class Mafia:
+    """
+    Represents a mafia in the game.
+
+    :param players: Players that was defined as mafia.
+    """
     def __init__(self, players):
         self.__players = players
 
-    async def notify_mafias(self, bot: Bot):
+    async def notifyMafias(self, bot: Bot):
         """
         Notify mafia about their role in the game.
 
         :param bot: The Telegram bot.
         """
         for player in self.__players:
-            await bot.send_photo(chat_id=player.get_id(),
-                                 photo=open(random.choice(["images/mafia_1.jpeg", "images/mafia_2.jpeg"]), "rb"))
-            await bot.send_message(chat_id=player.get_id(), text=f"You are {Role.MAFIA.value}")
+            await bot.send_message(chat_id=player.getId(), text=f"You are {Role.MAFIA.value}")
 
-    def get_mafia_list(self):
+    def getMafiaList(self):
         """
         Get the list of mafia players.
 
@@ -72,7 +87,7 @@ class Mafia:
         """
         return self.__players
 
-    def set_mafia_list(self, list_players):
+    def setMafiaList(self, list_players):
         """
         Set the list of mafia players.
 
@@ -80,7 +95,7 @@ class Mafia:
         """
         self.__players = list_players
 
-    def remove_from_mafia_list(self, player):
+    def removeFromMafiaList(self, player):
         """
         Remove a player from the list of mafia players.
 
@@ -88,7 +103,7 @@ class Mafia:
         """
         self.__players.remove(player)
 
-    async def show_mafia_teammates(self, bot: Bot):
+    async def showMafiaTeammates(self, bot: Bot):
         """
         Show the mafia teammates to each mafia player.
 
@@ -98,10 +113,10 @@ class Mafia:
             return
         else:
             for player in self.__players:
-                teammates = [p.get_name() for p in self.__players if p != player]
-                await bot.send_message(chat_id=player.get_id(), text=f"Your Mafia teammates: {', '.join(teammates)}")
+                teammates = [p.getName() for p in self.__players if p != player]
+                await bot.send_message(chat_id=player.getId(), text=f"Your Mafia teammates: {', '.join(teammates)}")
 
-    async def show_remaining_mafia_teammates(self, bot: Bot):
+    async def showRemainingMafiaTeammates(self, bot: Bot):
         """
         Show the remaining mafia teammates to each mafia player after one teammate is voted out.
 
@@ -111,29 +126,29 @@ class Mafia:
             return
         else:
             for player in self.__players:
-                teammates = [p.get_name() for p in self.__players if p != player]
-                await bot.send_message(chat_id=player.get_id(), text="You have lost one of your teammates")
-                await bot.send_message(chat_id=player.get_id(),
-                                       text=f"Remaining Mafia teammates: {', '.join(teammates)}")
+                teammates = [p.getName() for p in self.__players if p != player]
+                await bot.send_message(chat_id=player.getId(), text="You have lost one of your teammates")
+                await bot.send_message(chat_id=player.getId(), text=f"Remaining Mafia teammates: {', '.join(teammates)}")
 
 
 class Detective:
+    """
+    Represents a detective in the game.
+
+    :param player: A player that was defined as a detective.
+    """
     def __init__(self, player):  # player - id of the player
         self.__player = player
 
-    async def notify_detective(self, bot: Bot):
+    async def notifyDetective(self, bot: Bot):
         """
         Notify the detective about their role in the game.
 
         :param bot: The Telegram bot.
         """
-        await bot.send_photo(chat_id=self.__player.get_id(),
-                             photo=open(random.choice(
-                                 ["images/detective_1.png", "images/detective_2.png", "images/detective_3.jpeg"]),
-                                        "rb"))
-        await bot.send_message(chat_id=self.__player.get_id(), text=f"You are {Role.DETECTIVE.value}")
+        await bot.send_message(chat_id=self.__player.getId(), text=f"You are {Role.DETECTIVE.value}")
 
-    def get_detective(self):
+    def getDetective(self):
         """
         Get the detective player.
 
@@ -141,7 +156,7 @@ class Detective:
         """
         return self.__player
 
-    def set_detective(self, player):
+    def setDetective(self, player):
         """
         Set the detective player.
 
@@ -151,20 +166,23 @@ class Detective:
 
 
 class Doctor:
+    """
+    Represents a doctor in the game.
+
+    :param player: A players that was defined as a doctor.
+    """
     def __init__(self, player):
         self.__player = player
 
-    async def notify_doctor(self, bot: Bot):
+    async def notifyDoctor(self, bot: Bot):
         """
         Notify the doctor about their role in the game.
 
         :param bot: The Telegram bot.
         """
-        await bot.send_photo(chat_id=self.__player.get_id(),
-                             photo=open(random.choice(["images/doctor_1.jpeg", "images/doctor_2.png"]), "rb"))
-        await bot.send_message(chat_id=self.__player.get_id(), text=f"You are {Role.DOCTOR.value}")
+        await bot.send_message(chat_id=self.__player.getId(), text=f"You are {Role.DOCTOR.value}")
 
-    def get_doctor(self):
+    def getDoctor(self):
         """
         Get the doctor player.
 
@@ -172,7 +190,7 @@ class Doctor:
         """
         return self.__player
 
-    def set_doctor(self, player):
+    def setDoctor(self, player):
         """
         Set the doctor player.
 
