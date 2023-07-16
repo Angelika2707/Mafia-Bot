@@ -1,8 +1,17 @@
+"""
+This module defines role in the gameпо.
+Classes notify players of their role, stores lists of players with the same roles.
+"""
+
 from aiogram import Bot
 from enum import Enum
 
 
 class Role(Enum):
+    """
+    Represents roles in the game.
+    """
+
     CITIZEN = 'citizen'
     DETECTIVE = 'detective'
     MAFIA = 'mafia'
@@ -10,6 +19,11 @@ class Role(Enum):
 
 
 class Citizen:
+    """
+    Represents a citizen in the game.
+
+    :param players: Players that was defined as citizens.
+    """
     def __init__(self, players):
         self.__players = players
 
@@ -30,13 +44,13 @@ class Citizen:
         """
         return self.__players
 
-    def setCitizensList(self, list):
+    def setCitizensList(self, list_players):
         """
         Set the list of citizens.
 
-        :param list: List of citizens.
+        :param list_players: List of citizens.
         """
-        self.__players = list
+        self.__players = list_players
 
     def removeFromCitizensList(self, player):
         """
@@ -48,6 +62,11 @@ class Citizen:
 
 
 class Mafia:
+    """
+    Represents a mafia in the game.
+
+    :param players: Players that was defined as mafia.
+    """
     def __init__(self, players):
         self.__players = players
 
@@ -68,13 +87,13 @@ class Mafia:
         """
         return self.__players
 
-    def setMafiaList(self, list):
+    def setMafiaList(self, list_players):
         """
         Set the list of mafia players.
 
-        :param list: List of mafia players.
+        :param list_players: List of mafia players.
         """
-        self.__players = list
+        self.__players = list_players
 
     def removeFromMafiaList(self, player):
         """
@@ -113,6 +132,11 @@ class Mafia:
 
 
 class Detective:
+    """
+    Represents a detective in the game.
+
+    :param player: A player that was defined as a detective.
+    """
     def __init__(self, player):  # player - id of the player
         self.__player = player
 
@@ -142,6 +166,11 @@ class Detective:
 
 
 class Doctor:
+    """
+    Represents a doctor in the game.
+
+    :param player: A players that was defined as a doctor.
+    """
     def __init__(self, player):
         self.__player = player
 

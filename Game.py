@@ -1,3 +1,8 @@
+"""
+This module controls the flow of the game.
+It does player registration, keeps track of the day/night cycle, emergency game interruptions.
+"""
+
 from aiogram import Bot
 import random
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -195,7 +200,7 @@ class Game:
         """
         Start the game.
         """
-        self.__time_of_day = "night"    # flag that defines day cycle
+        self.__time_of_day = "night"  # flag that defines day cycle
         self.__status_game = True
 
     async def nightCycle(self):
@@ -206,7 +211,7 @@ class Game:
         if self.__status_game:
             self.setNight()
             await self.__bot.send_message(chat_id=self.__chat_id, text="The night is coming. The city falls asleep")
-            await self.showVoteToKill()         # give the mafia the opportunity to choose a victim
+            await self.showVoteToKill()  # give the mafia the opportunity to choose a victim
             await self.__bot.send_message(chat_id=self.__chat_id, text="Mafia is waking up. They are choosing their "
                                                                        "victim")
             # if there is a doctor or detective in the game, then let them choose a player for the night action
@@ -248,7 +253,7 @@ class Game:
             self.resetNightVictimMafia()
             self.resetNightHealedPlayer()
             self.resetNightCheckedPlayer()
-            await self.check_players()      # check conditions for win
+            await self.check_players()  # check conditions for win
             await self.__bot.send_message(chat_id=self.__chat_id, text="It's daytime. Discuss and vote for the Mafia")
             await self.__bot.send_message(chat_id=self.__chat_id, text="Use command /start_voting to start voting for "
                                                                        "players")
@@ -275,32 +280,32 @@ class Game:
         """
         Create and show the doctor a keyboard with players so that he can select a player to heal.
         """
-        choosePlayers = InlineKeyboardMarkup(row_width=len(self.__list_players))
+        choose_players = InlineKeyboardMarkup(row_width=len(self.__list_players))
         for player in self.__list_players:
             username = player.getName()
             callback_data_doctor = "doctor_heal_" + username
             player_to_heal = InlineKeyboardButton(text=username, callback_data=callback_data_doctor)
-            choosePlayers.add(player_to_heal)
+            choose_players.add(player_to_heal)
 
         doctor = self.__doctor.getDoctor()
         await self.__bot.send_message(chat_id=doctor.getId(), text="Choose a player to heal",
-                                      reply_markup=choosePlayers)
+                                      reply_markup=choose_players)
 
     async def showPlayersToCheckRole(self):
         """
         Create and show the detective a keyboard with players so that he can select a player to check their role.
         """
-        choosePlayers = InlineKeyboardMarkup(row_width=len(self.__list_players) - 1)
+        choose_players = InlineKeyboardMarkup(row_width=len(self.__list_players) - 1)
         for player in self.__list_players:
             if player != self.__detective.getDetective():
                 username = player.getName()
                 callback_data_detective = "detective_check_" + username
                 player_to_check = InlineKeyboardButton(text=username, callback_data=callback_data_detective)
-                choosePlayers.add(player_to_check)
+                choose_players.add(player_to_check)
 
         detective = self.__detective.getDetective()
         await self.__bot.send_message(chat_id=detective.getId(), text="Choose a player for checking role",
-                                      reply_markup=choosePlayers)
+                                      reply_markup=choose_players)
 
     async def getChatMemberByUsername(self, username):
         """
@@ -397,15 +402,8 @@ class Game:
         """
         Define the roles for the players in the game.
         """
-        # DEFINE MAFIAS PLAYERS
-        # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        # define mafias players
         number_of_mafia = int(len(self.__list_players) / 4)
-
-        # it is for debugging, delete in release
-        # -------------------------------
-        if number_of_mafia == 0:
-            number_of_mafia = 1
-        # -------------------------------
 
         indexes_mafia_players = random.sample(range(len(self.__list_players)),
                                               k=number_of_mafia)  # choose random players to be mafia
@@ -417,7 +415,6 @@ class Game:
         await mafia.showMafiaTeammates(self.__bot)
         self.__mafia = mafia
         self.__active_roles.append(Roles.Role.MAFIA)
-        # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
         civilians = list(set(self.__list_players).difference(set(list_mafia)))  # list of players without mafia
         self.__list_innocents = list(civilians)  # take list of innocents

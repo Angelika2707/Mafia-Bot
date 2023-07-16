@@ -33,6 +33,9 @@ referenceKeyBoard.add(reference)
 # process callback to registrate player
 @dp.callback_query_handler(lambda callback: callback.data == "register")
 async def register(callback: types.CallbackQuery):
+    """
+    Callback handler for the registration in the game.
+    """
     await bot.answer_callback_query(callback_query_id=callback.id)
     print(callback.from_user.id)
     if registrationPlayers.checkPlayerInGame(callback.from_user.id):
@@ -71,14 +74,14 @@ async def kill(callback: types.CallbackQuery):
         await bot.send_message(chat_id=main_game.getChatId(), text="Mafia has made their choice")
         max_votes = max(main_game.getVotes().values())
         max_voted_players = [player.getName() for player, count in main_game.getVotes().items() if count == max_votes]
-        if len(max_voted_players) > 1:      # if more than 1 player got the max number of votes
+        if len(max_voted_players) > 1:  # if more than 1 player got the max number of votes
             await bot.send_message(chat_id=main_game.getChatId(),
                                    text="This night Mafia could not reach an agreement")
         else:
             victim = await main_game.getChatMemberByUsername(max_voted_players[0])
             await main_game.killPlayer(victim)
         main_game.resetVotes()
-        if await main_game.checkNightMoves():   # checking that all active roles have made a move at night
+        if await main_game.checkNightMoves():  # checking that all active roles have made a move at night
             await main_game.dayCycle()
 
 
@@ -93,7 +96,7 @@ async def heal(callback: types.CallbackQuery):
     healed_player = await main_game.getChatMemberByUsername(username)
     await main_game.healPlayer(healed_player)
     await main_game.confirmMove(Roles.Role.DOCTOR)
-    if await main_game.checkNightMoves():    # checking that all active roles have made a move at night
+    if await main_game.checkNightMoves():  # checking that all active roles have made a move at night
         await main_game.dayCycle()
 
 
@@ -110,13 +113,16 @@ async def check_role(callback: types.CallbackQuery):
     await bot.send_message(chat_id=callback.from_user.id, text=f"The role of checked player {checked_player.getName()} "
                                                                f"is {checked_player.getRole().value}")
     await main_game.confirmMove(Roles.Role.DETECTIVE)
-    if await main_game.checkNightMoves():    # checking that all active roles have made a move at night
+    if await main_game.checkNightMoves():  # checking that all active roles have made a move at night
         await main_game.dayCycle()
 
 
 # command start
 @dp.message_handler(commands=['start'])
-async def info_about_game(message: types.Message):  # message.answer = написать в чат
+async def info_about_game(message: types.Message):
+    """
+    Message handler for the command '/start' that give information about bot.
+    """
     await message.answer("Hello!\nI am a host bot that allows you to play Mafia online in Telegram. To do this, "
                          "you just need to add a bot to the group and follow the instructions.")
 
@@ -135,7 +141,7 @@ async def day_voting(message: types.Message):
     if main_game.getTimeOfDay() == "day":
         await bot.send_message(chat_id=main_game.getChatId(), text="Use '/vote @username' to vote for a player")
         votes = {player: 0 for player in main_game.getPlayers()}
-        main_game.setVotes(votes)       # change game dictionary for voting to collect votes from players
+        main_game.setVotes(votes)  # change game dictionary for voting to collect votes from players
     # if the player is in the game, and it's nighttime
     else:
         await message.answer("Voting can only be started during the day")
@@ -188,7 +194,7 @@ async def voting(message: types.Message):
         main_game.resetWhoVoted()
         max_votes = max(main_game.getVotes().values())
         max_voted_players = [player.getName() for player, count in main_game.getVotes().items() if count == max_votes]
-        if len(max_voted_players) > 1:      # if more than 1 player got the max number of votes
+        if len(max_voted_players) > 1:  # if more than 1 player got the max number of votes
             await bot.send_message(chat_id=main_game.getChatId(), text="No one was voted out during the day voting")
         else:
             await bot.send_message(chat_id=main_game.getChatId(), text=f"As a result of the vote, player "
@@ -204,6 +210,9 @@ async def voting(message: types.Message):
 # print rules of game
 @dp.message_handler(commands=['rules'])
 async def info_about_game(message: types.Message):
+    """
+    Message handler for the '/rules' command. Give information about rules and how to play.
+    """
     await message.answer('Before the game you need to write the command "/start" to the bot If you are playing for '
                          'the first time', reply_markup=referenceKeyBoard)
     await message.answer(
@@ -225,6 +234,9 @@ async def info_about_game(message: types.Message):
 # create inline keyboard and announce about registration
 @dp.message_handler(commands=['registration'])
 async def registration(message: types.Message):
+    """
+    Message handler for the '/registration' command. Initiates registration for game.
+    """
     registrationPlayers.dataReset()
     main_game.dataReset()
     if message.chat.type == 'group' or message.chat.type == 'supergroup':
@@ -237,6 +249,9 @@ async def registration(message: types.Message):
 # start game
 @dp.message_handler(commands=['start_game'])
 async def start_game(message: types.Message):
+    """
+    Message handler for the '/start_game' command. Start game for registered players.
+    """
     if message.chat.type == 'group' or message.chat.type == 'supergroup':  # this command only for chats
         print(registrationPlayers.getNumberPlayers())
         if registrationPlayers.getNumberPlayers() <= 0:  # check that players are enough for game
@@ -256,6 +271,9 @@ async def start_game(message: types.Message):
 
 @dp.message_handler(commands=['end_game'])
 async def end_game(message: types.Message):
+    """
+    Message handler for the '/end_game' command. Crash the game session.
+    """
     registrationPlayers.dataReset()
     main_game.dataReset()
     main_game.status_game = False
@@ -265,6 +283,10 @@ async def end_game(message: types.Message):
 
 @dp.message_handler()
 async def prohibition_speech_night(message: types.Message):
+    """
+    Message handler for every message. Forbids everyone from writing at night, and prohibit writing for non-players
+    and killed players.
+    """
     flag_not_player = False
 
     if main_game.getTimeOfDay() == "night":
