@@ -15,7 +15,7 @@ config = configparser.ConfigParser()
 config.read("settings.ini")
 
 # create bot class
-bot = Bot(token=config['Telegram']["token"])
+bot = Bot(token="5990396163:AAGOgKqVWSHStXo0CaD-kkD8lCxXdtCnmfY")
 dp = Dispatcher(bot)
 
 # main class of mafia game
@@ -242,6 +242,7 @@ async def registration(message: types.Message):
     """
     Message handler for the '/registration' command. Initiates the registration for game.
     """
+    print(message.from_user.id)
     registrationPlayers.data_reset()
     main_game.data_reset()
     if message.chat.type == 'group' or message.chat.type == 'supergroup':  # command available only for groups with bot
@@ -259,7 +260,7 @@ async def start_game(message: types.Message):
     """
     if message.chat.type == 'group' or message.chat.type == 'supergroup':  # this command only for chats
         print(registrationPlayers.get_number_players())
-        if registrationPlayers.get_number_players() <= 0:  # check that players are enough for game
+        if registrationPlayers.get_number_players() <= 2:  # check that players are enough for game
             await message.answer("There are too few of you! Minimum number of players is 4.")
         else:
             await message.answer("Game is start!\nEveryone got their roles in the private messages.")

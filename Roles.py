@@ -1,5 +1,6 @@
 from enum import Enum
 from aiogram import Bot
+import random
 
 
 class Role(Enum):
@@ -20,6 +21,7 @@ class Citizen:
         :param bot: The Telegram bot.
         """
         for player in self.__players:
+            await bot.send_photo(chat_id=player.get_id(), photo=open("images/citizen (2).jpg", "rb"))
             await bot.send_message(chat_id=player.get_id(), text=f"You are {Role.CITIZEN.value}")
 
     def get_citizens_list(self):
@@ -58,6 +60,8 @@ class Mafia:
         :param bot: The Telegram bot.
         """
         for player in self.__players:
+            await bot.send_photo(chat_id=player.get_id(),
+                                 photo=open(random.choice(["images/mafia_1.jpeg", "images/mafia_2.jpeg"]), "rb"))
             await bot.send_message(chat_id=player.get_id(), text=f"You are {Role.MAFIA.value}")
 
     def get_mafia_list(self):
@@ -123,6 +127,10 @@ class Detective:
 
         :param bot: The Telegram bot.
         """
+        await bot.send_photo(chat_id=self.__player.get_id(),
+                             photo=open(random.choice(
+                                 ["images/detective_1.png", "images/detective_2.png", "images/detective_3.jpeg"]),
+                                        "rb"))
         await bot.send_message(chat_id=self.__player.get_id(), text=f"You are {Role.DETECTIVE.value}")
 
     def get_detective(self):
@@ -152,6 +160,8 @@ class Doctor:
 
         :param bot: The Telegram bot.
         """
+        await bot.send_photo(chat_id=self.__player.get_id(),
+                             photo=open(random.choice(["images/doctor_1.jpeg", "images/doctor_2.png"]), "rb"))
         await bot.send_message(chat_id=self.__player.get_id(), text=f"You are {Role.DOCTOR.value}")
 
     def get_doctor(self):

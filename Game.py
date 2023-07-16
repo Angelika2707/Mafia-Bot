@@ -205,6 +205,7 @@ class Game:
         await self.check_players()
         if self.__status_game:
             self.set_night()
+            await self.__bot.send_photo(chat_id=self.__chat_id, photo=open("images/night_city.jpg", "rb"))
             await self.__bot.send_message(chat_id=self.__chat_id, text="The night is coming. The city falls asleep")
             await self.show_vote_to_kill()  # give the mafia the opportunity to choose a victim
             await self.__bot.send_message(chat_id=self.__chat_id, text="Mafia is waking up. They are choosing their "
@@ -229,14 +230,14 @@ class Game:
                 await self.__bot.send_message(chat_id=self.__killed_at_night.get_id(), text="You were killed by mafia")
                 await self.__bot.send_message(chat_id=self.__chat_id,
                                               text=f"Player {self.__killed_at_night.get_name()} "
-                                                   "was killed that night. His role was "
+                                                   "was killed that night. Their role was "
                                                    f"{self.__killed_at_night.get_role().value}")
             # actions if the player chosen by the mafia was saved by the doctor
             elif self.__killed_at_night is not None and self.check_player_healed_by_doctor():
                 await self.__bot.send_message(chat_id=self.__chat_id,
                                               text=f"Player {self.__killed_at_night.get_name()} "
                                                    f"was saved that night. Doctor has "
-                                                   f"healed him")
+                                                   f"healed them")
             # actions if the player chosen by the mafia was saved by the detective
             elif self.__killed_at_night is not None and self.check_player_saved_by_detective():
                 await self.__bot.send_message(chat_id=self.__chat_id,
@@ -252,6 +253,7 @@ class Game:
             self.reset_night_healed_player()
             self.reset_night_checked_player()
             await self.check_players()  # check conditions for win
+            await self.__bot.send_photo(chat_id=self.__chat_id, photo=open("images/day_city.jpg", "rb"))
             await self.__bot.send_message(chat_id=self.__chat_id, text="It's daytime. Discuss and vote for the Mafia")
             await self.__bot.send_message(chat_id=self.__chat_id, text="Use command /start_voting to start voting for "
                                                                        "players")
@@ -451,12 +453,13 @@ class Game:
         number_mafia = len(self.__mafia.get_mafia_list())
         if number_mafia == 0:
             self.__status_game = False
+            await self.__bot.send_photo(chat_id=self.__chat_id, photo=open("images/citizens.jpg", "rb"))
             await self.__bot.send_message(chat_id=self.__chat_id,
-                                          text="The number of citizens is bigger than the number "
-                                               "of mafia. Citizens won!")
+                                          text="There is no mafia left. Citizens won!")
             self.data_reset()
         if number_mafia >= len(self.__list_innocents):
             self.__status_game = False
+            await self.__bot.send_photo(chat_id=self.__chat_id, photo=open("images/mafia_together.jpg", "rb"))
             await self.__bot.send_message(chat_id=self.__chat_id,
                                           text="The number of citizens is equal to the number of "
                                                "mafia. Mafia won!")
